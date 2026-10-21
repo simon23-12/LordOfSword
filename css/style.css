@@ -10,7 +10,14 @@
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; background: #000; overflow: hidden; font-family: var(--font); color: var(--ink); user-select: none; -webkit-user-select: none; }
 #stage { position: absolute; left: 0; top: 0; width: 1280px; height: 720px; transform-origin: 0 0; overflow: hidden; background: #000; }
+#gl { position: absolute; inset: 0; width: 1280px; height: 720px; }
 #game { position: absolute; inset: 0; width: 1280px; height: 720px; cursor: crosshair; }
+#nogl { position: absolute; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; text-align: center; background: #0e0b0a; color: var(--ink); font-size: 20px; line-height: 1.6; }
+.save-row { display: flex; gap: 10px; justify-content: center; margin: 12px 0 4px; }
+.gear { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 10px; margin: 8px 0 2px; font-size: 12px; }
+.gear .g { background: rgba(0, 0, 0, 0.3); border: 1px solid var(--gold-dim); border-radius: 4px; padding: 5px 8px; line-height: 1.35; }
+.gear .g b { display: block; color: var(--gold); font-size: 11px; letter-spacing: 1px; text-transform: uppercase; }
+.gear .g small { color: var(--ink-dim); }
 .hidden { display: none !important; }
 .screen { position: absolute; inset: 0; }
 .overlay { background: rgba(0, 0, 0, 0.62); display: flex; align-items: center; justify-content: center; z-index: 20; }
@@ -117,7 +124,7 @@ html, body { margin: 0; height: 100%; background: #000; overflow: hidden; font-f
 .locked-box b { color: #ffe08a; font-size: 22px; }
 
 /* Dialoge */
-.dialog { width: 520px; padding: 24px 28px; }
+.dialog { width: 580px; padding: 22px 26px; }
 .dialog.wide { width: 640px; }
 .dialog h2 { margin: 0 0 14px; text-align: center; font-size: 34px; letter-spacing: 4px; text-transform: uppercase; color: #f1dfaa; text-shadow: 0 2px 0 #000; }
 .dialog h2.dead { color: #c4242b; }
@@ -125,7 +132,7 @@ html, body { margin: 0; height: 100%; background: #000; overflow: hidden; font-f
 .vol { display: flex; align-items: center; gap: 14px; margin: 8px 0; }
 .vol label { width: 80px; color: var(--ink-dim); text-transform: uppercase; letter-spacing: 2px; font-size: 12px; }
 .vol input { flex: 1; accent-color: var(--gold); }
-.help { margin: 14px 0; font-size: 13px; line-height: 1.8; color: var(--ink-dim); padding: 10px 12px; background: rgba(0, 0, 0, 0.3); border-radius: 4px; }
+.help { margin: 12px 0; font-size: 12.5px; line-height: 1.65; color: var(--ink-dim); padding: 10px 12px; background: rgba(0, 0, 0, 0.3); border-radius: 4px; }
 .help b { color: var(--gold); }
 kbd { font-family: var(--font); background: #2a2018; border: 1px solid var(--gold-dim); border-radius: 3px; padding: 0 5px; color: #f1dfaa; font-size: 12px; }
 .btn-row { display: flex; gap: 10px; justify-content: center; margin-top: 12px; }

@@ -37,18 +37,34 @@ const App = (function () {
       ? `Mana ${f0(S.maxMana)} <em>→ ${f0(nM.maxMana)}</em> · Zauberstärke ×${f1(LOS.spellPower(1, S.mag, 0))} <em>→ ×${f1(LOS.spellPower(1, nM.mag, 0))}</em>`
       : `Erster Punkt öffnet das Mana <em>→ ${f0(nM.maxMana)}</em>`;
     const chips = SPELLS.map(s => `<span class="chip ${sv.pts.mag >= s.unlock ? 'on' : ''}" data-tip="${esc(`<b style="color:${s.color}">${s.name}</b>${s.desc}<br>Kosten ${s.cost} Mana · Taste ${s.key}`)}">${s.name} · ${s.unlock}</span>`).join('');
+    const spr = S.sprint, nspr = nA.sprint;
+    const atkEff = `Schwertschaden ${f0(S.dmg)} <em>→ ${f0(nA.dmg)}</em><br>` + (spr
+      ? `Sprint ${f1(spr.dur)} s <em>→ ${f1(nspr.dur)}</em> · Pause ${f0(spr.cd)} s <em>→ ${f0(nspr.cd)}</em>`
+      : `<span style="color:#8d96ad">Sprint ab Stufe ${BAL.sprintUnlockLevel} (Shift)</span>`);
+    const blk = S.block, nblk = nD.block;
+    const defEff = `Schadensreduktion ${f1(S.dr * 100)}% <em>→ ${f1(nD.dr * 100)}%</em><br>` + (blk
+      ? `Schild blockt ${f0(blk.red * 100)}% <em>→ ${f0(nblk.red * 100)}%</em>`
+      : `<span style="color:#8d96ad">Schild ab Stufe ${BAL.shieldUnlockLevel} (Q / K)</span>`);
     const stats = `
-      ${mk('atk', 'Angriff', `Schwertschaden ${f0(S.dmg)} <em>→ ${f0(nA.dmg)}</em>`)}
-      ${mk('def', 'Verteidigung', `Schadensreduktion ${f1(S.dr * 100)}% <em>→ ${f1(nD.dr * 100)}%</em>`)}
+      ${mk('atk', 'Angriff', atkEff)}
+      ${mk('def', 'Verteidigung', defEff)}
       ${mk('vit', 'Leben', `Max. Leben ${f0(S.maxHp)} <em>→ ${f0(nV.maxHp)}</em>`)}
       ${magLocked ? mk('mag', 'Zauber', `Die Magie erwacht ab <b style="color:#ffe08a">Stufe ${BAL.magicUnlockLevel}</b>.`, `Die Magie erwacht ab <b style="color:#ffe08a">Stufe ${BAL.magicUnlockLevel}</b>.`)
         : `<div class="stat"><div class="nm">Zauber<b>${sv.pts.mag}</b></div><button class="btn" data-act="add" data-stat="mag" ${sv.unspent > 0 ? '' : 'disabled'} data-tip="${esc('<b>Zauber +1</b>Shift-Klick: +5 Punkte')}">+</button><div class="eff">${magEff}</div><div class="spell-chips">${chips}</div></div>`}`;
+    const G = LOS.GEAR, tS = LOS.gearTier(sv.pts.atk), tD = LOS.gearTier(sv.pts.def), tB = LOS.bodyTier(sv.level);
+    const nextS = LOS.gearNext(sv.pts.atk), nextD = LOS.gearNext(sv.pts.def);
+    const gear = `<div class="gear">
+      <div class="g"><b>Schwert</b>${G.sword[tS]}<br><small>${nextS ? `nächste Stufe bei ${nextS} Angriffspunkten` : 'voll aufgerüstet'}</small></div>
+      <div class="g"><b>Schild</b>${sv.level >= BAL.shieldUnlockLevel ? G.shield[tD] : 'ab Stufe ' + BAL.shieldUnlockLevel}<br><small>${nextD ? `nächste Stufe bei ${nextD} Verteidigungspunkten` : 'voll aufgerüstet'}</small></div>
+      <div class="g" style="grid-column:1/span 2"><b>Rüstung</b>${G.body[tB]}<small> · ${tB + 1 < G.body.length ? `neue Optik auf Stufe ${(tB + 1) * BAL.bodyTierEvery}` : 'höchste Stufe'}</small></div>
+    </div>`;
     $('panel-hero').innerHTML = `
       <h3>Krieger</h3>
       <div class="hero-head"><div class="lvl"><small>STUFE</small>${sv.level}</div><div class="pts">Statuspunkte<br><b>${sv.unspent}</b></div></div>
       <div class="xpbar"><i style="width:${pct}%"></i></div>
       <div class="xptext"><span>${f0(sv.xp)} / ${need ? f0(need) : '—'} XP</span><span>${need ? 'Nächster Punkt in ' + f0(Math.max(0, need - sv.xp)) + ' XP' : 'Höchststufe'}</span></div>
       ${stats}
+      ${gear}
       <div class="sub-h">Kampfwerte</div>
       <div class="kv">
         <span>Schaden pro Hieb</span><b>${f0(S.dmg)}</b>
@@ -56,6 +72,8 @@ const App = (function () {
         <span>Schaden pro Sekunde</span><b>${f0(S.dps)}</b>
         <span>Maximale Leben</span><b>${f0(S.maxHp)}</b>
         <span>Schadensreduktion</span><b>${f1(S.dr * 100)}%</b>
+        ${S.block ? `<span>Blockwert (Schild)</span><b>${f0(S.block.red * 100)}%</b>` : ''}
+        ${S.sprint ? `<span>Sprint / Abklingzeit</span><b>${f1(S.sprint.dur)} s / ${f0(S.sprint.cd)} s</b>` : ''}
         ${S.maxMana ? `<span>Mana / Regeneration</span><b>${f0(S.maxMana)} / ${f1(S.manaRegen)} pro s</b>` : ''}
         <span>Erfahrungsbonus</span><b>+${f0(S.rb.xp)}%</b>
       </div>
@@ -244,6 +262,16 @@ const App = (function () {
     $('btn-tocamp').onclick = () => { Sound.sfx('click'); toCamp(); };
   }
 
+  /** Spielstand als JSON-Datei herunterladen */
+  function exportSave() {
+    if (!Save.data) { alert('Es gibt noch keinen Spielstand zum Exportieren.'); return; }
+    const blob = new Blob([Save.exportJSON()], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = Save.fileName();
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  }
+
   /* ------------------------------------------------------------ Init */
   function init() {
     // Klicks im Lager (Delegation)
@@ -281,16 +309,24 @@ const App = (function () {
     $('btn-abandon').onclick = () => { setPause(false); Game.abandon(); };
     $('vol-music').oninput = e => { Sound.setMusicVol(e.target.value / 100); Save.data.settings.music = e.target.value / 100; Save.write(); };
     $('vol-sfx').oninput = e => { Sound.setSfxVol(e.target.value / 100); Save.data.settings.sfx = e.target.value / 100; Save.write(); };
-    $('btn-export').onclick = e => {
-      e.preventDefault(); if (!Save.exists) return;
-      const code = Save.exportCode();
-      if (navigator.clipboard) navigator.clipboard.writeText(code).then(() => alert('Spielstand-Code in die Zwischenablage kopiert.')).catch(() => prompt('Spielstand-Code:', code));
-      else prompt('Spielstand-Code:', code);
-    };
-    $('btn-import').onclick = e => {
-      e.preventDefault();
-      const code = prompt('Spielstand-Code einfügen:'); if (!code) return;
-      try { Save.importCode(code); toTitle(); alert('Spielstand geladen.'); } catch (err) { alert('Der Code ist ungültig.'); }
+    $('btn-export').onclick = e => { e.preventDefault(); exportSave(); };
+    $('btn-export2').onclick = () => { Sound.sfx('click'); exportSave(); };
+    $('btn-import').onclick = e => { e.preventDefault(); $('file-import').click(); };
+    $('btn-import2').onclick = () => { Sound.sfx('click'); if (A.mode === 'run') { alert('Importieren ist nur im Lager oder auf dem Titelbildschirm möglich.'); return; } $('file-import').click(); };
+    $('file-import').onchange = e => {
+      const f = e.target.files && e.target.files[0]; e.target.value = '';
+      if (!f) return;
+      const rd = new FileReader();
+      rd.onload = () => {
+        try {
+          if (Save.exists && !confirm('Den aktuellen Spielstand durch die Datei ersetzen?')) return;
+          Save.importJSON(String(rd.result));
+          if (A.settingsOpen) closeSettings();
+          if (A.mode === 'camp') toCamp(); else toTitle();
+          alert('Spielstand geladen (Stufe ' + Save.data.level + ').');
+        } catch (err) { alert('Die Datei ist kein gültiger Spielstand.'); }
+      };
+      rd.readAsText(f);
     };
     Game.onEnd = showEnd;
     if (/[?&]dev/.test(location.search)) devBox();

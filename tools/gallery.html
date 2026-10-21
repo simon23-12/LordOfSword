@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Lord of Sword – Modell-Galerie</title>
+<style>
+  html, body { margin: 0; background: #08080c; overflow: hidden; font: 12px sans-serif; color: #ddd; }
+  canvas { display: block; }
+  #bar { position: absolute; left: 8px; top: 8px; }
+  #bar a { color: #e8c97a; margin-right: 10px; }
+  .lbl { position: absolute; transform: translate(-50%, 0); text-shadow: 0 1px 2px #000; white-space: nowrap; pointer-events: none; }
+</style>
+</head>
+<body>
+<div id="bar">
+  <a href="?set=enemies">Gegner</a><a href="?set=players">Kämpfer (Stufe 0–80)</a><a href="?set=poses">Posen</a><a href="?set=gear">Schwerter &amp; Schilde</a>
+</div>
+<script src="../vendor/three.bundle.js"></script>
+<script src="../js/data.js"></script>
+<script src="../js/models.js"></script>
+<script src="../js/fx.js"></script>
+<script>
+/* Entwickler-Werkzeug: zeigt alle Modelle nebeneinander (isometrische Kamera wie im Spiel). */
+const qp = new URLSearchParams(location.search), set = qp.get('set') || 'enemies';
+const W = innerWidth, H = innerHeight;
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setSize(W, H); renderer.shadowMap.enabled = true; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.15;
+document.body.appendChild(renderer.domElement);
+const scene = new THREE.Scene(); scene.background = new THREE.Color('#14141c');
+scene.add(new THREE.HemisphereLight('#8a90c0', '#2a2018', 1.8));
+const key = new THREE.DirectionalLight('#ffffff', 2.2); key.position.set(-200, 500, 260); key.castShadow = true; key.shadow.mapSize.set(2048, 2048);
+Object.assign(key.shadow.camera, { left: -700, right: 700, top: 500, bottom: -500, near: 10, far: 1500 }); scene.add(key);
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(4000, 4000), new THREE.MeshLambertMaterial({ color: '#3a3630' })); floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
+
+const items = [];   // { rig, update(t) , x, z, label }
+const cols = set === 'players' ? 5 : set === 'poses' ? 4 : set === 'gear' ? 6 : 6, gap = set === 'enemies' ? 130 : 90;
+function place(i, n) { const c = i % cols, r = Math.floor(i / cols); return [(c - (cols - 1) / 2) * gap, (r - (Math.ceil(n / cols) - 1) / 2) * gap]; }
+const fakeP = o => Object.assign({ anim: 0, moving: false, sprinting: false, swingT: -1, swingDur: 0.3, swingSide: 1, blocking: false, blockT: 1, castT: 0, blockFlash: 0, parryFlash: 0 }, o || {});
+const S = LOS.derive(80, { atk: 0, def: 0, vit: 0, mag: 0 }, []);
+
+if (set === 'enemies') {
+  const seen = new Set(), list = [];
+  for (const z of LOS.ZONES) for (const m of z.mobs) if (!seen.has(m[2])) { seen.add(m[2]); list.push([m[2], LOS.ARCH[m[0]].r, m[1]]); }
+  list.push(['boss', LOS.BOSS.r, 'Boss']);
+  list.forEach(([look, r, name], i) => {
+    const rig = Models.enemy(look); rig.g.scale.setScalar(r);
+    const [x, z] = place(i, list.length); const holder = new THREE.Group(); holder.position.set(x * (look === 'boss' ? 1.3 : 1), 0, z); holder.add(rig.g); scene.add(holder);
+    rig.g.traverse(o => { if (o.isMesh) o.castShadow = true; });
+    const e = { anim: 0, moving: i % 2 === 0, wind: 0, windMax: 0.4, strikeT: 0, state: 'awake', id: i, dash: 0 };
+    items.push({ rig, holder, update(t) { e.anim = t; e.wind = (t % 3) < 0.4 ? 0.4 - (t % 3) : 0; e.strikeT = (t % 3) > 0.4 && (t % 3) < 0.65 ? 0.65 - (t % 3) : 0; rig.anim(rig, e, t); rig.g.position.y = (rig.g.userData.hoverY || 0) * r; }, x, z, label: name });
+  });
+} else if (set === 'players') {
+  for (let t = 0; t <= 8; t++) {
+    const rig = Models.player(t, Math.min(5, Math.floor(t * 0.7)), Math.min(5, Math.floor(t * 0.7)), t >= 1);
+    const [x, z] = place(t, 9); const holder = new THREE.Group(); holder.position.set(x, 0, z); holder.rotation.y = -0.6; holder.add(rig.g); scene.add(holder);
+    rig.g.traverse(o => { if (o.isMesh) o.castShadow = true; });
+    items.push({ rig, update(tm) { Models.animPlayer(rig, fakeP({ anim: tm }), S, tm); }, x, z, label: `Stufe ${t * 10} – ${LOS.GEAR.body[t]}` });
+  }
+} else if (set === 'poses') {
+  const poses = [['Stehen', {}], ['Laufen', { moving: true }], ['Sprint', { moving: true, sprinting: true }], ['Schwung 20%', { swingT: 0.06 }], ['Schwung 40%', { swingT: 0.12 }], ['Schwung 55%', { swingT: 0.165 }], ['Schwung 80%', { swingT: 0.24 }], ['Block', { blocking: true, blockT: 1 }], ['Zauber', { castT: 0.2, castColor: '#ff8a2a' }], ['Gegenschwung 40%', { swingT: 0.12, swingSide: -1 }], ['Parade-Blitz', { blocking: true, blockT: 1, parryFlash: 0.3 }], ['Hieb 100%', { swingT: 0.29 }]];
+  poses.forEach(([name, o], i) => {
+    const rig = Models.player(4, 3, 3, true);
+    const [x, z] = place(i, poses.length); const holder = new THREE.Group(); holder.position.set(x, 0, z); holder.rotation.y = -0.4; holder.add(rig.g); scene.add(holder);
+    rig.g.traverse(o => { if (o.isMesh) o.castShadow = true; });
+    items.push({ rig, update(tm) { Models.animPlayer(rig, fakeP(Object.assign({ anim: o.moving ? tm : 0.5 }, o)), S, tm); }, x, z, label: name });
+  });
+} else {
+  let i = 0;
+  const n = 12;
+  for (let t = 0; t < 6; t++) for (const kind of ['sword', 'shield']) {
+    const rig = Models.player(2, kind === 'sword' ? t : 0, kind === 'shield' ? t : 0, true);
+    const [x, z] = place(i++, n); const holder = new THREE.Group(); holder.position.set(x, 0, z); holder.rotation.y = kind === 'sword' ? -0.7 : -1.9; holder.add(rig.g); scene.add(holder);
+    rig.g.traverse(o => { if (o.isMesh) o.castShadow = true; });
+    items.push({ rig, update(tm) { Models.animPlayer(rig, fakeP({ anim: 0.5, blocking: kind === 'shield', blockT: 1 }), S, tm); }, x, z, label: (kind === 'sword' ? LOS.GEAR.sword : LOS.GEAR.shield)[t] });
+  }
+}
+const zoom = +qp.get('zoom') || (set === 'enemies' ? 520 : set === 'players' ? 300 : set === 'poses' ? 300 : 380);
+const focus = qp.get('at') ? qp.get('at').split(',').map(Number) : [0, 0];
+const hh = zoom / 2, asp = W / H, cam = new THREE.OrthographicCamera(-hh * asp, hh * asp, hh, -hh, 10, 4000);
+const yaw = Math.PI / 4, pitch = 0.93;
+cam.position.set(Math.cos(yaw) * Math.cos(pitch) * 1500, Math.sin(pitch) * 1500, Math.sin(yaw) * Math.cos(pitch) * 1500); cam.lookAt(focus[0], 20, focus[1]);
+cam.updateMatrixWorld();
+for (const it of items) { const d = document.createElement('div'); d.className = 'lbl'; d.textContent = it.label; document.body.appendChild(d); it.el = d; }
+function frame(ms) {
+  const t = ms / 1000;
+  for (const it of items) {
+    it.update(t);
+    const v = new THREE.Vector3(it.x, -4, it.z).project(cam); it.el.style.left = ((v.x + 1) / 2 * W) + 'px'; it.el.style.top = ((1 - v.y) / 2 * H) + 'px';
+  }
+  renderer.render(scene, cam);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

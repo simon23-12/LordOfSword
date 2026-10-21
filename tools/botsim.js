@@ -10,7 +10,7 @@ const fs = require('fs'), path = require('path'), vm = require('vm');
 const root = path.join(__dirname, '..');
 global.LOS = require(path.join(root, 'js/data.js'));
 global.Sound = { play() {}, sfx() {}, setIntensity() {}, setZone() {}, init() {} };
-global.Input = { keys: {}, mx: 640, my: 360, wx: 0, wy: 0, down: false, rclick: false, spellQueue: [] };
+global.Input = { keys: {}, mx: 640, my: 360, wx: 0, wy: 0, down: false, rclick: false, clickEdge: false, hover: null, spellQueue: [] };
 global.Save = {
   data: null, write() {},
 };
@@ -49,6 +49,8 @@ function bot(R) {
     p.target = R.botStage[cur] ? { x: (b.cx + .5) * T, y: (b.cy + .5) * T } : corner;
   }
   Input.wx = tgt ? tgt.x : p.x; Input.wy = tgt ? tgt.y : p.y;
+  // Schwertangriff ist jetzt manuell (Taste): der Bot schlägt zu, sobald ein Gegner in Reichweite ist
+  Input.keys.Space = !!(tgt && bd - tgt.r < R.S.reach - 8);
   if (R.S.mag > 0 && tgt && Math.random() < 0.06) {
     const un = LOS.SPELLS.map((s, i) => R.S.mag >= s.unlock ? i : -1).filter(i => i >= 0);
     Input.spellQueue.push(un[Math.floor(Math.random() * un.length)]);

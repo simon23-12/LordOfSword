@@ -53,8 +53,27 @@ const Save = (function () {
     data = normalize(d); write(); return data;
   }
 
+  /** Lesbarer JSON-Export (Datei-Download). */
+  function exportJSON() {
+    return JSON.stringify({ game: 'lordofsword', version: data.v, exported: new Date().toISOString(), data }, null, 2);
+  }
+  /** Nimmt JSON (Export-Datei oder rohe Spielstand-Daten) und – als Rückfall – den alten Base64-Code entgegen. */
+  function importJSON(text) {
+    text = String(text).trim();
+    let obj;
+    if (text[0] === '{') obj = JSON.parse(text);
+    else return importCode(text);
+    const d = obj && obj.game === 'lordofsword' ? obj.data : obj;
+    if (!d || typeof d !== 'object' || typeof d.level !== 'number' || !d.pts) throw new Error('kein Spielstand');
+    data = normalize(d); write(); return data;
+  }
+  function fileName() {
+    const d = new Date(), p = n => String(n).padStart(2, '0');
+    return `lordofsword-stufe${data.level}-${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}.json`;
+  }
+
   return {
-    load, write, create, wipe, exportCode, importCode,
+    load, write, create, wipe, exportCode, importCode, exportJSON, importJSON, fileName,
     get data() { return data; },
     get exists() { try { return !!localStorage.getItem(KEY); } catch (e) { return false; } },
   };

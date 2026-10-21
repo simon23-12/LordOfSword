@@ -123,13 +123,13 @@ const Dungeon = (function () {
       for (let xx = room.x + 2; xx < room.x + room.w - 1; xx += 5 + Math.floor(rand() * 3)) {
         if (isFloor(xx, room.y) && !isFloor(xx, room.y - 1)) {
           props.push({ type: 'torch', x: xx * T + T / 2, y: room.y * T, tall: true, wall: true, room: room.i });
-          lights.push({ x: xx * T + T / 2, y: room.y * T + 6, r: 270, flick: rand() * 10, room: room.i, strength: 1 });
+          lights.push({ x: xx * T + T / 2, y: room.y * T + 8, h: 56, r: 270, flick: rand() * 10, room: room.i, strength: 1, col: '#ff9a50' });
         }
       }
       if (room.boss) {
         for (const [bx, by] of [[room.x + 2, room.y + 2], [room.x + room.w - 3, room.y + 2], [room.x + 2, room.y + room.h - 3], [room.x + room.w - 3, room.y + room.h - 3]]) {
           props.push({ type: 'brazier', x: bx * T + T / 2, y: by * T + T / 2 + 10, tall: true, room: room.i });
-          lights.push({ x: bx * T + T / 2, y: by * T + T / 2 - 10, r: 300, flick: rand() * 10, room: room.i, strength: 1.1 });
+          lights.push({ x: bx * T + T / 2, y: by * T + T / 2 + 10, h: 50, r: 300, flick: rand() * 10, room: room.i, strength: 1.1, col: '#ff7a3a' });
         }
       }
       const area = room.w * room.h;
@@ -141,9 +141,9 @@ const Dungeon = (function () {
         const type = decor[Math.floor(rand() * decor.length)];
         const p = { type, x: tx * T + rand() * T, y: ty * T + rand() * T, a: rand() * 6.28, s: 0.7 + rand() * 0.6, tall: ['coffin', 'crystal', 'spike', 'candle'].includes(type), room: room.i };
         props.push(p);
-        if (type === 'crystal') lights.push({ x: p.x, y: p.y - 14, r: 140, flick: rand() * 10, room: room.i, strength: 0.7, color: true });
-        if (type === 'mushroom' && rand() < 0.5) lights.push({ x: p.x, y: p.y - 6, r: 90, flick: rand() * 10, room: room.i, strength: 0.5, color: true });
-        if (type === 'candle') lights.push({ x: p.x, y: p.y - 10, r: 90, flick: rand() * 10, room: room.i, strength: 0.6 });
+        if (type === 'crystal') lights.push({ x: p.x, y: p.y, h: 30, r: 150, flick: rand() * 10, room: room.i, strength: 0.7, color: true, col: '#6fd8ff' });
+        if (type === 'mushroom' && rand() < 0.5) lights.push({ x: p.x, y: p.y, h: 12, r: 100, flick: rand() * 10, room: room.i, strength: 0.5, color: true, col: '#b072ff' });
+        if (type === 'candle') lights.push({ x: p.x, y: p.y, h: 18, r: 100, flick: rand() * 10, room: room.i, strength: 0.6, col: '#ffb060' });
       }
       // Fässer / Urnen zum Zerschlagen (nur in den ersten Zonen, nicht im Startraum)
       if (!room.start && !room.boss) {

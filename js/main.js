@@ -1,20 +1,34 @@
 /* Lord of Sword – Eingabe, Hauptschleife, Skalierung */
-const Input = { keys: {}, mx: 640, my: 360, wx: 0, wy: 0, down: false, rclick: false, spellQueue: [] };
+const Input = { keys: {}, mx: 640, my: 360, wx: 0, wy: 0, down: false, rclick: false, clickEdge: false, hover: null, spellQueue: [] };
 
 (function () {
   'use strict';
   const stage = document.getElementById('stage');
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d');
+  let quality = 0, glScale = 1, glApplied = 0, slow = 0, fpsAvg = 60, warm = 3;
 
-  /* ---------------------------------------------------------- Skalierung */
+  /* ---------------------------------------------------------- Skalierung (Auflösung folgt Fenstergröße und Pixeldichte) */
   function resize() {
     const s = Math.min(window.innerWidth / 1280, window.innerHeight / 720);
     App.scale = s;
     stage.style.transform = `translate(${(window.innerWidth - 1280 * s) / 2}px, ${(window.innerHeight - 720 * s) / 2}px) scale(${s})`;
+    const q = Math.max(1, Math.min(2, Math.round(s * (window.devicePixelRatio || 1) * 4) / 4));
+    if (q !== quality) {
+      quality = q;
+      canvas.width = Math.round(1280 * q); canvas.height = Math.round(720 * q);
+    }
+    const gq = Math.round(Math.max(0.5, q * glScale) * 20) / 20;
+    if (gq !== glApplied) { glApplied = gq; Render.setQuality(gq); }
+  }
+  /** Läuft das Spiel dauerhaft zu langsam, sinkt die 3D-Auflösung schrittweise (bis 50 %). */
+  function watchPerformance(dt) {
+    if (warm > 0) { warm -= dt; return; }
+    fpsAvg += (1 / Math.max(dt, 0.001) - fpsAvg) * 0.05;
+    if (fpsAvg < 38 && glScale > 0.5) { slow += dt; if (slow > 2.5) { slow = 0; glScale = Math.max(0.5, glScale * 0.8); fpsAvg = 60; warm = 1.5; resize(); } }
+    else slow = 0;
   }
   window.addEventListener('resize', resize);
-  resize();
 
   /* ---------------------------------------------------------- Eingabe */
   function mousePos(e) {
@@ -26,7 +40,7 @@ const Input = { keys: {}, mx: 640, my: 360, wx: 0, wy: 0, down: false, rclick: f
     Sound.init();
     mousePos(e);
     if (App.mode !== 'run' || App.paused) return;
-    if (e.button === 0) Input.down = true;
+    if (e.button === 0) { Input.down = true; Input.clickEdge = true; }
     if (e.button === 2) Input.rclick = true;
     e.preventDefault();
   });
@@ -62,6 +76,7 @@ const Input = { keys: {}, mx: 640, my: 360, wx: 0, wy: 0, down: false, rclick: f
   if (Save.data) { Sound.setMusicVol(Save.data.settings.music); Sound.setSfxVol(Save.data.settings.sfx); }
   else { Save.create(); Save.wipe(); } // Standardwerte bereithalten, aber noch nichts speichern
   Render.init();
+  resize();
   App.init();
   App.toTitle();
 
@@ -69,20 +84,21 @@ const Input = { keys: {}, mx: 640, my: 360, wx: 0, wy: 0, down: false, rclick: f
   function frame(t) {
     const dt = Math.min(0.1, (t - last) / 1000); last = t;
     const now = t / 1000;
+    if (!document.hidden && dt < 0.1) watchPerformance(dt);
     try {
+      ctx.setTransform(quality, 0, 0, quality, 0, 0);
       if ((App.mode === 'run' || App.mode === 'end') && Game.R) {
-        if (App.mode === 'run' && !App.paused) Game.update(dt);
+        if (App.mode === 'run' && !App.paused) { Render.pointer(Game.R); Game.update(dt); }
         Render.drawRun(ctx, Game.R, now);
       } else {
         Render.drawCamp(ctx, now, dt, App.mode === 'camp');
       }
     } catch (err) {
       console.error(err);
-      if (!window.__errShown) { window.__errShown = true; setTimeout(() => { window.__errShown = false; }, 3000); }
     }
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
 
-  window.LOSDEBUG = { Game, Save, App, Sound, Render };
+  window.LOSDEBUG = { Game, Save, App, Sound, Render, Input, THREE };
 })();

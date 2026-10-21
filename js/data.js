@@ -5,7 +5,8 @@
   'use strict';
 
   const TILE = 48;
-  const ZOOM = 1.25;   // Kamera-Vergrößerung im Dungeon
+  // Isometrische Kamera: yaw = Drehung um die Hochachse, pitch = Neigung über dem Boden, view = sichtbare Höhe in Welteinheiten
+  const CAM = { yaw: Math.PI / 4, pitch: 0.93, view: 450 };
 
   /* ------------------------------------------------------------ Balancing */
   const BAL = {
@@ -24,6 +25,14 @@
     attackInterval: 0.85,
     armorBase: 4, armorGrow: 1.22, armorK: 100, maxReduction: 0.8,
     moveSpeed: 200,
+    // Sprint (Shift): Teil des Angriffs-Werts. Am Anfang kurz und mit sehr langer Abklingzeit.
+    sprintUnlockLevel: 10, sprintDur: 1.0, sprintDurPerPt: 0.035, sprintDurMax: 2.6,
+    sprintCd: 26, sprintCdPerPt: 0.07, sprintCdMin: 5, sprintMul: 1.75, sprintMulPerPt: 0.01, sprintMulMax: 2.3,
+    // Schild (Taste Q / K halten): Teil des Verteidigungs-Werts
+    shieldUnlockLevel: 12, blockBase: 0.5, blockMax: 0.9, blockHalf: 25, blockMove: 0.5, parryWindow: 0.18,
+    // Optik: Kämpfer wird alle 10 Stufen aufgewertet; Schwert/Schild je nach Angriffs-/Verteidigungspunkten
+    bodyTierEvery: 10,
+    gearPts: [0, 5, 12, 22, 35, 52],
     // Drops
     orbChance: 0.15, orbHeal: 0.22, restRegen: 0.025,
     manaOrbChance: 0.08,
@@ -169,7 +178,7 @@
   // unlock = nötige investierte Zauber-Punkte
   const SPELLS = [
     { id: 'fire',   name: 'Feuerball',    key: '1', unlock: 1,  cost: 14, cd: 0.8, base: 22,  color: '#ff8a2a',
-      desc: 'Ein Feuerball, der am Ziel explodiert.' },
+      desc: 'Ein zielsuchender Feuerball, der am Ziel explodiert.' },
     { id: 'nova',   name: 'Frostnova',    key: '2', unlock: 6,  cost: 22, cd: 3.5, base: 34,  color: '#79d6ff',
       desc: 'Eisring um dich: Schaden und starke Verlangsamung.' },
     { id: 'chain',  name: 'Kettenblitz',  key: '3', unlock: 14, cost: 28, cd: 1.6, base: 46,  color: '#c9b8ff',
@@ -192,6 +201,23 @@
     return b;
   }
 
+  /* ------------------------------------------------------------ Ausrüstung (nur aufrüstbar, nicht tauschbar) */
+  const GEAR = {
+    sword:  ['Rostiges Schwert', 'Eisenschwert', 'Stahlklinge', 'Silberklinge', 'Runenklinge', 'Himmelsklinge'],
+    shield: ['Holzschild', 'Eisenschild', 'Stahlschild', 'Wappenschild', 'Runenschild', 'Drachenschild'],
+    body:   ['Rekrut', 'Soldat', 'Veteran', 'Ritter', 'Hauptmann', 'Paladin', 'Champion', 'Lord', 'Held der Tiefe'],
+  };
+  /** Stufe (0..5) einer Ausrüstung anhand der investierten Punkte (Angriff -> Schwert, Verteidigung -> Schild) */
+  function gearTier(points) {
+    let t = 0;
+    for (let i = 0; i < BAL.gearPts.length; i++) if (points >= BAL.gearPts[i]) t = i;
+    return t;
+  }
+  /** Rüstungsstufe (0..8) des Kämpfers: alle 10 Stufen eine neue Optik */
+  function bodyTier(level) { return Math.min(GEAR.body.length - 1, Math.floor(level / BAL.bodyTierEvery)); }
+  /** Nächste Schwelle für die Ausrüstung oder null */
+  function gearNext(points) { const t = gearTier(points); return t + 1 < BAL.gearPts.length ? BAL.gearPts[t + 1] : null; }
+
   function derive(level, pts, runes) {
     const rb = runeBonus(runes);
     const rawDmg = BAL.dmgBase * grow(BAL.dmgGrow, pts.atk);
@@ -203,10 +229,19 @@
     const dr = Math.min(0.9, 1 - (1 - red) * (1 - rb.dr / 100));
     const hp = (BAL.hpBase * grow(BAL.hpGrow, pts.vit) + BAL.hpLinear * pts.vit) * (1 + rb.hp / 100);
     const mag = pts.mag;
+    const sprint = level >= BAL.sprintUnlockLevel ? {
+      dur: Math.min(BAL.sprintDurMax, BAL.sprintDur + BAL.sprintDurPerPt * pts.atk),
+      cd: Math.max(BAL.sprintCdMin, BAL.sprintCd / (1 + BAL.sprintCdPerPt * pts.atk)),
+      mul: Math.min(BAL.sprintMulMax, BAL.sprintMul + BAL.sprintMulPerPt * pts.atk),
+    } : null;
+    const block = level >= BAL.shieldUnlockLevel ? {
+      red: Math.min(BAL.blockMax, BAL.blockBase + (BAL.blockMax - BAL.blockBase) * pts.def / (pts.def + BAL.blockHalf)),
+      move: BAL.blockMove, parry: BAL.parryWindow,
+    } : null;
     const maxMana = mag > 0 ? 30 + 5 * mag : 0;
     const manaRegen = mag > 0 ? (2 + 0.35 * mag) * (1 + rb.arcane / 100) : 0;
     return {
-      level, pts, rb, dmg, interval, critCh, critMul: 1.6, armor, red, dr, maxHp: hp,
+      level, pts, rb, dmg, interval, critCh, critMul: 1.6, armor, red, dr, maxHp: hp, sprint, block,
       mag, maxMana, manaRegen,
       dps: dmg * (1 + critCh * 0.6) / interval,
       move: BAL.moveSpeed * (1 + rb.move / 100),
@@ -217,7 +252,7 @@
   }
 
   const api = {
-    TILE, ZOOM, BAL, xpNeed, DIFFS, ARCH, ZONES, BOSS, NUM_ROOMS, roomEnemyCount, pickMob, enemyStats,
+    TILE, CAM, BAL, xpNeed, GEAR, gearTier, gearNext, bodyTier, DIFFS, ARCH, ZONES, BOSS, NUM_ROOMS, roomEnemyCount, pickMob, enemyStats,
     TIERS, RUNES, RUNE_BY_ID, runeValue, runeText, runeSlots, rollRuneTier,
     SPELLS, spellPower, runeBonus, derive,
   };

@@ -1,0 +1,10 @@
+{
+  "name": "lordofsword-vendor",
+  "private": true,
+  "description": "Baut vendor/three.bundle.js (three.js + Bloom-Postprocessing als globales THREE).",
+  "scripts": {
+    "build": "esbuild entry.js --bundle --format=iife --global-name=THREE --minify --legal-comments=none --outfile=../../vendor/three.bundle.js"
+  },
+  "dependencies": { "three": "0.171.0" },
+  "devDependencies": { "esbuild": "^0.24.0" }
+}
