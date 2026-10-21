@@ -59,7 +59,7 @@ const FX = (function () {
   const VS = `attribute float aSize; attribute vec3 aColor; attribute float aAlpha; varying vec3 vC; varying float vA; uniform float uScale;
     void main(){ vC = aColor; vA = aAlpha; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); gl_PointSize = max(1.0, aSize * uScale); }`;
   const FS = `varying vec3 vC; varying float vA;
-    void main(){ vec2 d = gl_PointCoord - 0.5; float r = dot(d, d) * 4.0; if (r > 1.0) discard; gl_FragColor = vec4(vC, smoothstep(1.0, 0.1, r) * vA); }`;
+    void main(){ vec2 d = gl_PointCoord - 0.5; float r = dot(d, d) * 4.0; if (r > 1.0) discard; gl_FragColor = vec4(max(vC, vec3(0.0)), (1.0 - smoothstep(0.1, 1.0, r)) * clamp(vA, 0.0, 1.0)); }`;
 
   function makeSystem(scene, cap, additive) {
     const s = { cap, n: 0, pos: new Float32Array(cap * 3), col: new Float32Array(cap * 3), size: new Float32Array(cap), alpha: new Float32Array(cap) };
@@ -81,6 +81,7 @@ const FX = (function () {
     return c;
   }
   function putParticle(s, q, boost) {
+    if (!isFinite(q.x + q.y + q.z + q.size + q.life / q.max)) return;
     const i = s.n++, c = rgb(q.color), a = clamp01(q.life / q.max);
     s.pos[i * 3] = q.x; s.pos[i * 3 + 1] = q.z; s.pos[i * 3 + 2] = q.y;
     s.col[i * 3] = c[0] * boost; s.col[i * 3 + 1] = c[1] * boost; s.col[i * 3 + 2] = c[2] * boost;

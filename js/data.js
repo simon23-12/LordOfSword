@@ -20,9 +20,9 @@
     runeSlotLevels: [15, 30, 45, 60, 75],
     // Spielerwerte
 
-    dmgBase: 14, dmgGrow: 1.26,
+    dmgBase: 9.1, dmgGrow: 1.26,
     hpBase: 100, hpGrow: 1.24, hpLinear: 6,
-    attackInterval: 0.85,
+    attackInterval: 0.55,
     armorBase: 4, armorGrow: 1.22, armorK: 100, maxReduction: 0.8,
     moveSpeed: 200,
     // Sprint (Shift): Teil des Angriffs-Werts. Am Anfang kurz und mit sehr langer Abklingzeit.

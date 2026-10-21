@@ -138,7 +138,7 @@ const Render = (function () {
           vec3 p = vec3(cos(ang) * r, 26.0 + sin(aT * 3.14159) * 3.0, sin(ang) * r); gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0); }`,
       fragmentShader: `varying float vT; varying float vR; uniform float uHead; uniform float uSide; uniform float uAlpha; uniform vec3 uColor;
         void main(){ float tp = uSide > 0.0 ? vT : 1.0 - vT; float d = uHead - tp; if (d < 0.0) discard;
-          float a = exp(-d * 3.6); float edge = mix(0.25, 1.0, pow(vR, 1.6)); vec3 c = mix(uColor, vec3(1.0), exp(-d * 12.0)) * 1.7; gl_FragColor = vec4(c, a * edge * uAlpha); }`,
+          float a = exp(-d * 3.6); float edge = mix(0.25, 1.0, vR * vR); vec3 c = mix(uColor, vec3(1.0), exp(-d * 12.0)) * 1.7; gl_FragColor = vec4(c, a * edge * uAlpha); }`,
       transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide,
     });
     const mesh = new THREE.Mesh(g, mat); mesh.frustumCulled = false; mesh.visible = false; mesh.renderOrder = 6;
