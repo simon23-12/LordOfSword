@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Lord of Sword</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Lord of Sword – ein Hack-and-Slay-Grind im Diablo-Stil. Dein Krieger kämpft automatisch, du steuerst, levelst und wagst dich immer tiefer ins Verlies.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%230e0b0a'/%3E%3Cpath d='M32 6 38 36 32 40 26 36Z' fill='%23d9dde6'/%3E%3Crect x='20' y='38' width='24' height='5' rx='2' fill='%23d9b94a'/%3E%3Crect x='29' y='43' width='6' height='13' fill='%237a1218'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="stage">
+  <canvas id="game" width="1280" height="720"></canvas>
+
+  <!-- Titel -->
+  <div id="title" class="screen">
+    <div class="logo">
+      <div class="logo-small">— Hack &amp; Slay —</div>
+      <h1>Lord of Sword</h1>
+      <div class="logo-sub">Das Verlies ruft. Du wirst oft sterben.</div>
+    </div>
+    <div class="menu">
+      <button id="btn-continue" class="btn big">Weiter</button>
+      <button id="btn-new" class="btn big">Neues Spiel</button>
+    </div>
+    <div class="title-foot">
+      <div>Kopfhörer empfohlen · Ein Klick startet Musik und Ton</div>
+      <div class="link-row"><a href="#" id="btn-export">Spielstand exportieren</a> · <a href="#" id="btn-import">importieren</a></div>
+    </div>
+  </div>
+
+  <!-- Lager -->
+  <div id="camp" class="screen hidden">
+    <div class="panel left" id="panel-hero"></div>
+    <div class="camp-center">
+      <div class="camp-title">Das Lager</div>
+      <div class="camp-info" id="camp-info"></div>
+      <div class="start-box panel">
+        <div class="row"><span class="lbl">Welt</span><span class="val">I · Das Untergrund-Verlies</span></div>
+        <div class="row"><span class="lbl">Schwierigkeit</span><span class="val seg" id="seg-diff"></span></div>
+        <div class="row"><span class="lbl">Startpunkt</span><span class="val seg" id="seg-zone"></span></div>
+        <button id="btn-start" class="btn huge">In die Tiefe</button>
+        <div class="hint" id="start-hint"></div>
+      </div>
+    </div>
+    <div class="panel right" id="panel-runes"></div>
+    <div class="camp-top-right">
+      <button class="btn small" id="btn-settings">Ton &amp; Hilfe</button>
+    </div>
+  </div>
+
+  <!-- Pause / Einstellungen -->
+  <div id="pause" class="screen hidden overlay">
+    <div class="panel dialog">
+      <h2 id="pause-title">Pause</h2>
+      <div class="vol"><label>Musik</label><input type="range" id="vol-music" min="0" max="100"></div>
+      <div class="vol"><label>Effekte</label><input type="range" id="vol-sfx" min="0" max="100"></div>
+      <div class="help">
+        <b>Steuerung</b><br>
+        <kbd>W A S D</kbd> oder gedrückte <kbd>linke Maustaste</kbd>: bewegen<br>
+        Das Schwert schlägt <b>automatisch</b> zu, sobald Gegner in Reichweite sind.<br>
+        <kbd>1</kbd>–<kbd>5</kbd>: Zauber zum Mauszeiger · <kbd>rechte Maustaste</kbd>: zuletzt gewählten Zauber<br>
+        <kbd>Esc</kbd>: Pause · <kbd>M</kbd>: Ton an/aus<br>
+        Rote Kugeln heilen, blaue geben Mana. Ruhe dich aus, wenn kein Gegner in der Nähe ist.
+      </div>
+      <div class="btn-row">
+        <button class="btn" id="btn-resume">Weiter</button>
+        <button class="btn danger" id="btn-abandon">Aufgeben (ins Lager)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ende eines Runs -->
+  <div id="end" class="screen hidden overlay">
+    <div class="panel dialog wide" id="end-box"></div>
+  </div>
+
+  <div id="tip" class="hidden"></div>
+  <div id="devbox" class="hidden"></div>
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/save.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/dungeon.js"></script>
+<script src="js/game.js"></script>
+<script src="js/render.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
