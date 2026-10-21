@@ -26,7 +26,7 @@ Das Schwert trifft alle Gegner im Schwungbogen; Hiebe wechseln die Seite, haben 
 
 ## Spielprinzip
 
-- **Run = ein Abstieg ins Verlies** (15 Räume in 5 Zonen, am Ende der Boss Malgorath). Stirbst du, gehst du ins Lager zurück – XP, Level und Runen bleiben dir.
+- **Run = ein Abstieg ins Verlies** (15 Räume in 5 Zonen, am Ende der Boss Malgorath). Das Verlies ist **immer dasselbe** (gleiche Räume, gleiche Gegner und Champions) – `BAL.dungeonSeed` in `js/data.js`, `0` = zufällig. Stirbst du, gehst du ins Lager zurück – XP, Level und Runen bleiben dir.
 - **XP → Statuspunkte:** Jede Stufe gibt 1 Punkt. Die XP pro Stufe steigen stetig, die einfachen Gegner der ersten Zonen geben aber immer gleich viel – du musst also tiefer vordringen.
 - **Werte:** Angriff, Verteidigung, Leben – und **Zauber**, der erst ab **Stufe 11** existiert. Zauber werden durch investierte Zauberpunkte freigeschaltet
   (Feuerball 1, Frostnova 6, Kettenblitz 14, Meteorsturm 26, Götterzorn 42) und werden mit jedem Punkt stärker. Der **Feuerball** sucht sich selbst ein Ziel.

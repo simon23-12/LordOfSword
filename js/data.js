@@ -39,6 +39,7 @@
     runeChance: 0.012, runeChanceElite: 0.35,
     eliteChance: 0.07,
     roomsPerZone: 3,
+    dungeonSeed: 20240611, // fester Wert = immer dasselbe Verlies mit denselben Gegnern; 0 = zufällig
   };
 
   /** Exponentielles Wachstum pro Punkt mit Softcap. */

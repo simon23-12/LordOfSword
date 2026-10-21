@@ -12,12 +12,20 @@ const Game = (function () {
   const angDiff = (a, b) => { let d = a - b; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI; return d; };
   const pick = a => a[Math.floor(Math.random() * a.length)];
 
+  /** Führt fn mit festem Zufallsstrom aus (Math.random wird danach wiederhergestellt). */
+  function withSeed(seed, fn) {
+    if (!BAL.dungeonSeed) { fn(); return; }
+    const orig = Math.random, rnd = Dungeon.mulberry(seed);
+    Math.random = rnd;
+    try { fn(); } finally { Math.random = orig; }
+  }
+
   /* ============================================================ Run-Start */
   function startRun() {
     const sv = Save.data;
     const diff = sv.difficulty;
     const startZone = Math.min(sv.startZone, sv.zoneUnlock);
-    const map = Dungeon.generate();
+    const map = Dungeon.generate(BAL.dungeonSeed);
     const slots = LOS.runeSlots(sv.level);
     const runes = sv.equipped.slice(0, slots).filter(Boolean);
     const S = LOS.derive(sv.level, sv.pts, runes);
@@ -38,7 +46,7 @@ const Game = (function () {
     R.cam.x = R.p.x; R.cam.y = R.p.y;
     for (const room of map.rooms) {
       if (room.i < startRoom) { room.cleared = true; continue; }
-      spawnRoom(room);
+      withSeed(BAL.dungeonSeed + room.i * 7919, () => spawnRoom(room)); // jeder Raum hat immer die gleichen Gegner
     }
     R.sel = Math.max(0, LOS.SPELLS.filter(s => sv.pts.mag >= s.unlock).length - 1);
     markExplored(true);
