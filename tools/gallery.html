@@ -13,7 +13,7 @@
 </head>
 <body>
 <div id="bar">
-  <a href="?set=enemies">Gegner</a><a href="?set=players">Kämpfer (Level 0–80)</a><a href="?set=poses">Posen</a><a href="?set=gear">Schwerter &amp; Schilde</a>
+  <a href="?set=enemies">Gegner (Welt I)</a><a href="?set=enemies&world=1">Gegner (Welt II)</a><a href="?set=players">Kämpfer (Level 0–80)</a><a href="?set=poses">Posen</a><a href="?set=gear">Schwerter &amp; Schilde</a>
 </div>
 <script src="../vendor/three.bundle.js"></script>
 <script src="../js/data.js"></script>
@@ -22,6 +22,7 @@
 <script>
 /* Entwickler-Werkzeug: zeigt alle Modelle nebeneinander (isometrische Kamera wie im Spiel). */
 const qp = new URLSearchParams(location.search), set = qp.get('set') || 'enemies';
+LOS.setWorld(+qp.get('world') || 0);
 const W = innerWidth, H = innerHeight;
 const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
 renderer.setSize(W, H); renderer.shadowMap.enabled = true; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.15;
@@ -41,7 +42,7 @@ const S = LOS.derive(80, { atk: 0, def: 0, vit: 0, mag: 0 }, []);
 if (set === 'enemies') {
   const seen = new Set(), list = [];
   for (const z of LOS.ZONES) for (const m of z.mobs) if (!seen.has(m[2])) { seen.add(m[2]); list.push([m[2], LOS.ARCH[m[0]].r, m[1]]); }
-  list.push(['boss', LOS.BOSS.r, 'Boss']);
+  list.push([LOS.BOSS.look || 'boss', LOS.BOSS.r, 'Boss']);
   list.forEach(([look, r, name], i) => {
     const rig = Models.enemy(look); rig.g.scale.setScalar(r);
     const [x, z] = place(i, list.length); const holder = new THREE.Group(); holder.position.set(x * (look === 'boss' ? 1.3 : 1), 0, z); holder.add(rig.g); scene.add(holder);

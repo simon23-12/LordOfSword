@@ -84,6 +84,11 @@ const Render = (function () {
     crack(c) { c.strokeStyle = 'rgba(0,0,0,0.6)'; c.lineWidth = 2.4; c.lineJoin = 'round'; c.beginPath(); c.moveTo(4, 32); c.lineTo(22, 38); c.lineTo(34, 26); c.lineTo(60, 34); c.moveTo(34, 26); c.lineTo(40, 12); c.stroke(); },
     web(c) { c.strokeStyle = 'rgba(225,225,225,0.4)'; c.lineWidth = 1.2; for (let i = 0; i < 7; i++) { c.beginPath(); c.moveTo(32, 32); c.lineTo(32 + Math.cos(i * 0.9) * 30, 32 + Math.sin(i * 0.9) * 30); c.stroke(); } for (const r of [8, 16, 24]) { c.beginPath(); c.arc(32, 32, r, 0, TAU); c.stroke(); } },
     goo(c) { c.fillStyle = 'rgba(110,200,70,0.5)'; c.beginPath(); c.ellipse(32, 32, 26, 16, 0, 0, TAU); c.fill(); c.fillStyle = 'rgba(190,255,130,0.4)'; c.beginPath(); c.ellipse(36, 30, 11, 6, 0, 0, TAU); c.fill(); },
+    grass(c) { c.strokeStyle = 'rgba(110,150,70,0.85)'; c.lineWidth = 2.2; c.lineCap = 'round'; for (let i = 0; i < 14; i++) { const x = 8 + Math.random() * 48, y = 14 + Math.random() * 40, l = 6 + Math.random() * 9; c.beginPath(); c.moveTo(x, y); c.quadraticCurveTo(x + (Math.random() - 0.5) * 6, y - l * 0.6, x + (Math.random() - 0.5) * 8, y - l); c.stroke(); } },
+    rubble(c) { for (let i = 0; i < 16; i++) { const g = 90 + Math.random() * 70 | 0; c.fillStyle = `rgba(${g},${g - 4},${g - 10},0.85)`; c.beginPath(); c.ellipse(8 + Math.random() * 48, 8 + Math.random() * 48, 2 + Math.random() * 4.5, 1.6 + Math.random() * 3, Math.random() * 3, 0, TAU); c.fill(); } },
+    pebbles(c) { for (let i = 0; i < 9; i++) { const g = 120 + Math.random() * 60 | 0; c.fillStyle = `rgba(${g},${g - 6},${g - 14},0.9)`; c.beginPath(); c.ellipse(10 + Math.random() * 44, 10 + Math.random() * 44, 3 + Math.random() * 3, 2.4 + Math.random() * 2, Math.random() * 3, 0, TAU); c.fill(); } },
+    snow(c) { c.fillStyle = 'rgba(240,247,252,0.85)'; for (let i = 0; i < 5; i++) { c.beginPath(); c.ellipse(14 + Math.random() * 36, 16 + Math.random() * 32, 8 + Math.random() * 10, 5 + Math.random() * 6, Math.random() * 3, 0, TAU); c.fill(); } },
+    frost(c) { c.strokeStyle = 'rgba(200,235,255,0.75)'; c.lineWidth = 1.6; c.lineCap = 'round'; for (let k = 0; k < 6; k++) { const a = k * Math.PI / 3; c.beginPath(); c.moveTo(32, 32); c.lineTo(32 + Math.cos(a) * 24, 32 + Math.sin(a) * 24); c.stroke(); for (const t of [0.45, 0.75]) { const bx = 32 + Math.cos(a) * 24 * t, by = 32 + Math.sin(a) * 24 * t; c.beginPath(); c.moveTo(bx, by); c.lineTo(bx + Math.cos(a + 0.9) * 7, by + Math.sin(a + 0.9) * 7); c.moveTo(bx, by); c.lineTo(bx + Math.cos(a - 0.9) * 7, by + Math.sin(a - 0.9) * 7); c.stroke(); } } },
     blood(c) { c.fillStyle = 'rgba(120,10,16,0.7)'; c.beginPath(); c.ellipse(32, 32, 28, 17, 0, 0, TAU); c.fill(); c.fillStyle = 'rgba(170,22,28,0.5)'; c.beginPath(); c.ellipse(24, 36, 11, 6, 0, 0, TAU); c.fill(); },
   };
   const decalTex = {};
@@ -91,7 +96,38 @@ const Render = (function () {
     if (!decalTex[type]) decalTex[type] = FX.canvasTex(64, 64, (c) => decalDraw[type](c));
     return decalTex[type];
   }
+  /** Felswand mit senkrechten Schichten (Klippen, Felsnadeln) */
+  function rockTexture() {
+    return FX.canvasTex(128, 256, (c, w, h) => {
+      c.fillStyle = '#c9c5bc'; c.fillRect(0, 0, w, h);
+      for (let i = 0; i < 26; i++) { const x = Math.random() * w, ww = 4 + Math.random() * 14, sh = 170 + Math.random() * 60 | 0; c.fillStyle = `rgba(${sh},${sh - 6},${sh - 14},0.55)`; c.fillRect(x, 0, ww, h); }
+      for (let i = 0; i < 14; i++) { c.fillStyle = `rgba(0,0,0,${0.06 + Math.random() * 0.1})`; c.fillRect(0, Math.random() * h, w, 2 + Math.random() * 4); }
+      for (let i = 0; i < 600; i++) { c.fillStyle = `rgba(${Math.random() < 0.5 ? '0,0,0' : '255,255,255'},${Math.random() * 0.1})`; c.fillRect(Math.random() * w, Math.random() * h, 1 + Math.random() * 3, 1 + Math.random() * 3); }
+    });
+  }
+  function plankTexture() {
+    return FX.canvasTex(128, 128, (c, w, h) => {
+      c.fillStyle = '#cfc7b8'; c.fillRect(0, 0, w, h);
+      for (let i = 0; i < 6; i++) { const y = i * h / 6, sh = 175 + Math.random() * 60 | 0; c.fillStyle = `rgb(${sh},${sh - 10},${sh - 24})`; c.fillRect(0, y, w, h / 6 - 2); c.fillStyle = 'rgba(40,28,16,0.8)'; c.fillRect(0, y + h / 6 - 2, w, 2); }
+      for (let i = 0; i < 300; i++) { c.fillStyle = `rgba(0,0,0,${Math.random() * 0.1})`; c.fillRect(Math.random() * w, Math.random() * h, 8 + Math.random() * 20, 1); }
+    });
+  }
+  const mistU = { value: new THREE.Color('#9db8d4') };
+  /** Wolkennebel in der Tiefe: Fläche blendet mit sinkender Höhe in die Hintergrundfarbe über (Klippen verschwinden im Dunst) */
+  function mistify(mat, near, far) {
+    near = near === undefined ? -10 : near; far = far === undefined ? -165 : far;
+    mat.customProgramCacheKey = () => 'mist' + near + ',' + far;
+    mat.onBeforeCompile = sh => {
+      sh.uniforms.uMist = mistU;
+      sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying float vWY;')
+        .replace('#include <begin_vertex>', '#include <begin_vertex>\n vec4 _wp = vec4(transformed, 1.0);\n #ifdef USE_INSTANCING\n _wp = instanceMatrix * _wp;\n #endif\n vWY = (modelMatrix * _wp).y;');
+      sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying float vWY; uniform vec3 uMist;')
+        .replace('#include <dithering_fragment>', 'gl_FragColor.rgb = mix(gl_FragColor.rgb, uMist, smoothstep(' + near.toFixed(1) + ', ' + far.toFixed(1) + ', vWY));\n#include <dithering_fragment>');
+    };
+    return mat;
+  }
   let blobMat, floorMat, wallSideMat, wallTopMat, floorGeo, wallGeo;
+  let peakFloorMats, bridgeMat, spireMats, cliffGeo, cloudTex;
   function sharedAssets() {
     blobMat = new THREE.MeshBasicMaterial({ map: FX.canvasTex(64, 64, (c, w, h) => { const g = c.createRadialGradient(w / 2, h / 2, 2, w / 2, h / 2, w / 2); g.addColorStop(0, 'rgba(0,0,0,0.75)'); g.addColorStop(0.6, 'rgba(0,0,0,0.35)'); g.addColorStop(1, 'rgba(0,0,0,0)'); c.fillStyle = g; c.fillRect(0, 0, w, h); }), transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 });
     const ft = stoneTexture('floor'), wt = stoneTexture('wall');
@@ -100,6 +136,14 @@ const Render = (function () {
     wallTopMat = new THREE.MeshLambertMaterial({ color: '#d8d4cc' });
     floorGeo = new THREE.BoxGeometry(T, 6, T);
     wallGeo = new THREE.BoxGeometry(T, WALL_H, T);
+    // Gebirge: Plateau-Boden als hohe Säule (Klippe), Brücken als dünne Planken, Felsnadeln
+    cliffGeo = new THREE.BoxGeometry(T, 190, T);
+    const rt = rockTexture(), top = new THREE.MeshLambertMaterial({ map: ft }), side = mistify(new THREE.MeshLambertMaterial({ map: rt }));
+    mistify(top);
+    peakFloorMats = [side, side, top, side, side, side];
+    bridgeMat = mistify(new THREE.MeshLambertMaterial({ map: plankTexture() }));
+    const sp = new THREE.MeshLambertMaterial({ map: rt }); spireMats = [sp, sp, sp, sp, sp, sp];
+    cloudTex = FX.canvasTex(128, 128, (c, w, h) => { const g = c.createRadialGradient(w / 2, h / 2, 4, w / 2, h / 2, w / 2); g.addColorStop(0, 'rgba(255,255,255,0.9)'); g.addColorStop(0.5, 'rgba(255,255,255,0.35)'); g.addColorStop(1, 'rgba(255,255,255,0)'); c.fillStyle = g; c.fillRect(0, 0, w, h); });
   }
 
   /* ============================================================ Lauf-Szene */
@@ -170,34 +214,96 @@ const Render = (function () {
     return false;
   }
 
+  /** Gebirge: Plateaus als hohe Säulen über den Wolken, Brücken als Planken, Felsnadeln; dazu Wolken und ferne Gipfel in der Tiefe */
+  function buildPeaksTerrain(map) {
+    const m4 = new THREE.Matrix4(), col = new THREE.Color(), W = map.w, H = map.h;
+    let nf = 0, nb = 0, nw = 0;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const k = y * W + x;
+      if (map.tiles[k]) { if (map.corr[k] && map.roomAt[k] < 0) nb++; else nf++; } else if (map.pillar[k]) nw++;
+    }
+    const floor = new THREE.InstancedMesh(cliffGeo, peakFloorMats, nf), bridge = new THREE.InstancedMesh(floorGeo, bridgeMat, nb), wall = new THREE.InstancedMesh(wallGeo, spireMats, nw);
+    for (const o of [floor, bridge, wall]) { o.receiveShadow = true; o.castShadow = o !== bridge; o.frustumCulled = false; }
+    let fi = 0, bi = 0, wi = 0;
+    const wallIdx = new Int32Array(W * H).fill(-1);
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const k = y * W + x, z = zoneAt(map, x, y), Z = ZONES[z], h = hash(x, y);
+      if (map.tiles[k]) {
+        if (map.corr[k] && map.roomAt[k] < 0) {
+          m4.makeTranslation(x * T + T / 2, -3, y * T + T / 2); bridge.setMatrixAt(bi, m4);
+          col.set(Z.bridge || '#7a5a36').multiplyScalar(1.5 + h * 0.4); bridge.setColorAt(bi, col); bi++;
+        } else {
+          m4.makeTranslation(x * T + T / 2, -95, y * T + T / 2); floor.setMatrixAt(fi, m4);
+          col.set(Z.floor[(x + y) & 1]).multiplyScalar(h < 0.2 ? 1.7 : h > 0.85 ? 2.35 : 2.0); floor.setColorAt(fi, col); fi++;
+        }
+      } else if (map.pillar[k]) {
+        m4.makeTranslation(x * T + T / 2, WALL_H / 2, y * T + T / 2); wall.setMatrixAt(wi, m4);
+        col.set(Z.wall[0]).multiplyScalar(h < 0.3 ? 3.0 : 2.6); wall.setColorAt(wi, col);
+        wallIdx[k] = wi; wi++;
+      }
+    }
+    for (const o of [floor, bridge, wall]) { o.instanceMatrix.needsUpdate = true; if (o.instanceColor) o.instanceColor.needsUpdate = true; }
+    run.mapGroup.add(floor, bridge, wall);
+    run.wall = wall; run.wallIdx = wallIdx; run.wallCur = new Float32Array(nw).fill(1); run.map = map;
+    // Wolkenmeer in der Tiefe + ferne Gipfel (nur in den Lücken zwischen den Plateaus sichtbar), zufällig rund um begehbare Flächen verteilt
+    run.clouds = [];
+    const rnd = (() => { let a = 12345; return () => ((a = (a * 1664525 + 1013904223) >>> 0) / 4294967296); })();
+    const floors = [];
+    for (let i = 0; i < map.tiles.length; i += 3) if (map.tiles[i]) floors.push(i);
+    const around = (rmin, rmax) => { const f = floors[Math.floor(rnd() * floors.length)], a = rnd() * 6.283, d = rmin + rnd() * (rmax - rmin); return [(f % W) + Math.cos(a) * d, Math.floor(f / W) + Math.sin(a) * d]; };
+    const cloudMat = new THREE.MeshBasicMaterial({ map: cloudTex, transparent: true, opacity: 0.7, depthWrite: false, color: '#ffffff' });
+    for (let i = 0; i < 150; i++) {
+      const [tx, ty] = around(2, 12), c = new THREE.Mesh(FX.geo.plane, cloudMat), sz = 140 + rnd() * 260;
+      c.rotation.x = -Math.PI / 2; c.scale.set(sz, sz * (0.5 + rnd() * 0.4), 1);
+      c.position.set(tx * T, -60 - rnd() * 100, ty * T); c.userData.v = 4 + rnd() * 9;
+      run.mapGroup.add(c); run.clouds.push(c);
+    }
+    const rockM = mistify(new THREE.MeshLambertMaterial({ color: '#7a7e8c' }), -90, -215), snowM = mistify(new THREE.MeshLambertMaterial({ color: '#f2f7fc' }), -90, -215);
+    let placed = 0;
+    for (let tries = 0; tries < 900 && placed < 130; tries++) {
+      const [fx, fy] = around(4, 11), tx = Math.round(fx), ty = Math.round(fy);
+      if (tx < 0 || ty < 0 || tx >= W || ty >= H) continue;
+      let near = false;
+      for (let dy = -3; dy <= 3 && !near; dy++) for (let dx = -3; dx <= 3; dx++) { const nx = tx + dx, ny = ty + dy; if (nx >= 0 && ny >= 0 && nx < W && ny < H && map.tiles[ny * W + nx]) { near = true; break; } }
+      if (near) continue;
+      const hgt = 90 + rnd() * 90, rad = 45 + rnd() * 60, base = -190, x = (tx + 0.5) * T, z = (ty + 0.5) * T;
+      const cone = new THREE.Mesh(new THREE.ConeGeometry(rad, hgt, 6), rockM); cone.position.set(x, base + hgt / 2, z); cone.rotation.y = rnd() * 3;
+      const cap = new THREE.Mesh(new THREE.ConeGeometry(rad * 0.42, hgt * 0.36, 6), snowM); cap.position.set(x, base + hgt * 0.82, z); cap.rotation.y = cone.rotation.y;
+      run.mapGroup.add(cone, cap); placed++;
+    }
+  }
+
   function clearGroup(g) { while (g.children.length) { const o = g.children[0]; g.remove(o); if (o.isInstancedMesh) o.dispose(); } }
 
   function buildMap(map) {
     clearGroup(run.mapGroup);
-    run.flames = []; run.breakables = []; run.fires = [];
-    let nf = 0, nw = 0;
-    for (let y = 0; y < map.h; y++) for (let x = 0; x < map.w; x++) { if (map.tiles[y * map.w + x]) nf++; else if (wallVisible(map, x, y)) nw++; }
-    const floor = new THREE.InstancedMesh(floorGeo, floorMat, nf), wall = new THREE.InstancedMesh(wallGeo, [wallSideMat, wallSideMat, wallTopMat, wallTopMat, wallSideMat, wallSideMat], nw);
-    floor.receiveShadow = true; wall.receiveShadow = true; wall.castShadow = true; floor.frustumCulled = false; wall.frustumCulled = false;
-    const m4 = new THREE.Matrix4(), col = new THREE.Color();
-    let fi = 0, wi = 0;
-    const wallIdx = new Int32Array(map.w * map.h).fill(-1);
-    for (let y = 0; y < map.h; y++) for (let x = 0; x < map.w; x++) {
-      const k = y * map.w + x, z = zoneAt(map, x, y), Z = ZONES[z], h = hash(x, y);
-      if (map.tiles[k]) {
-        m4.makeTranslation(x * T + T / 2, -3, y * T + T / 2); floor.setMatrixAt(fi, m4);
-        col.set(Z.floor[(x + y) & 1]).multiplyScalar(h < 0.2 ? 1.7 : h > 0.85 ? 2.35 : 2.0); floor.setColorAt(fi, col); fi++;
-      } else if (wallVisible(map, x, y)) {
-        m4.makeTranslation(x * T + T / 2, WALL_H / 2, y * T + T / 2); wall.setMatrixAt(wi, m4);
-        col.set(Z.wall[0]).multiplyScalar(h < 0.3 ? 2.9 : 2.5); wall.setColorAt(wi, col);
-        wallIdx[k] = wi; wi++;
+    run.flames = []; run.breakables = []; run.fires = []; run.clouds = null; run.snap = true;
+    if (map.style === 'peaks') buildPeaksTerrain(map);
+    else {
+      let nf = 0, nw = 0;
+      for (let y = 0; y < map.h; y++) for (let x = 0; x < map.w; x++) { if (map.tiles[y * map.w + x]) nf++; else if (wallVisible(map, x, y)) nw++; }
+      const floor = new THREE.InstancedMesh(floorGeo, floorMat, nf), wall = new THREE.InstancedMesh(wallGeo, [wallSideMat, wallSideMat, wallTopMat, wallTopMat, wallSideMat, wallSideMat], nw);
+      floor.receiveShadow = true; wall.receiveShadow = true; wall.castShadow = true; floor.frustumCulled = false; wall.frustumCulled = false;
+      const m4 = new THREE.Matrix4(), col = new THREE.Color();
+      let fi = 0, wi = 0;
+      const wallIdx = new Int32Array(map.w * map.h).fill(-1);
+      for (let y = 0; y < map.h; y++) for (let x = 0; x < map.w; x++) {
+        const k = y * map.w + x, z = zoneAt(map, x, y), Z = ZONES[z], h = hash(x, y);
+        if (map.tiles[k]) {
+          m4.makeTranslation(x * T + T / 2, -3, y * T + T / 2); floor.setMatrixAt(fi, m4);
+          col.set(Z.floor[(x + y) & 1]).multiplyScalar(h < 0.2 ? 1.7 : h > 0.85 ? 2.35 : 2.0); floor.setColorAt(fi, col); fi++;
+        } else if (wallVisible(map, x, y)) {
+          m4.makeTranslation(x * T + T / 2, WALL_H / 2, y * T + T / 2); wall.setMatrixAt(wi, m4);
+          col.set(Z.wall[0]).multiplyScalar(h < 0.3 ? 2.9 : 2.5); wall.setColorAt(wi, col);
+          wallIdx[k] = wi; wi++;
+        }
       }
+      floor.instanceMatrix.needsUpdate = true; wall.instanceMatrix.needsUpdate = true;
+      if (floor.instanceColor) floor.instanceColor.needsUpdate = true;
+      if (wall.instanceColor) wall.instanceColor.needsUpdate = true;
+      run.mapGroup.add(floor, wall);
+      run.wall = wall; run.wallIdx = wallIdx; run.wallCur = new Float32Array(nw).fill(1); run.map = map;
     }
-    floor.instanceMatrix.needsUpdate = true; wall.instanceMatrix.needsUpdate = true;
-    if (floor.instanceColor) floor.instanceColor.needsUpdate = true;
-    if (wall.instanceColor) wall.instanceColor.needsUpdate = true;
-    run.mapGroup.add(floor, wall);
-    run.wall = wall; run.wallIdx = wallIdx; run.wallCur = new Float32Array(nw).fill(1); run.map = map;
     const decals = new THREE.Group(); run.mapGroup.add(decals);
     for (const pr of map.props) {
       const type = pr.type;
@@ -208,7 +314,7 @@ const Render = (function () {
       }
       const g = Models.prop(type);
       if (!g.children.length) continue;
-      g.position.set(pr.x, 0, type === 'torch' ? pr.y + 5 : type === 'barrel' ? pr.y - 6 : pr.y);
+      g.position.set(pr.x, 0, type === 'torch' ? pr.y + 5 : (type === 'barrel' || type === 'crate') ? pr.y - 6 : pr.y);
       if (pr.a && type !== 'torch' && type !== 'brazier') g.rotation.y = pr.a;
       g.traverse(o => { if (o.isMesh) { o.receiveShadow = true; if (o.userData.flame) { o.castShadow = false; run.flames.push(o); } } });
       run.mapGroup.add(g);
@@ -351,10 +457,11 @@ const Render = (function () {
   const tmpC = new THREE.Color();
   function updateLights(R, now, dt) {
     const p = R.p, map = R.map, room = map.rooms[R.room], zi = room ? room.zone : 0;
-    const Z = ZONE_AMB[zi], k2 = Math.min(1, dt * 2);
+    const Z = (ZONES[zi] && ZONES[zi].amb) || ZONE_AMB[zi], k2 = run.snap ? 1 : Math.min(1, dt * 2);
+    run.snap = false;
     run.amb.color.lerp(tmpC.set(Z.sky), k2); run.amb.groundColor.lerp(tmpC.set(Z.ground), k2);
     run.amb.intensity = 1.9 * tune.ambient;
-    run.scene.background.lerp(tmpC.set(Z.bg), k2);
+    run.scene.background.lerp(tmpC.set(Z.bg), k2); mistU.value.copy(run.scene.background);
     run.key.color.lerp(tmpC.set(Z.key), k2); run.key.intensity = 1.5 * tune.key;
     const sx = Math.round(p.x / 8) * 8, sz = Math.round(p.y / 8) * 8;
     run.key.position.set(sx - 260, 640, sz + 120); run.key.target.position.set(sx, 0, sz); run.key.target.updateMatrixWorld();
@@ -412,7 +519,7 @@ const Render = (function () {
     for (const e of R.enemies) {
       if (e.dead) continue;
       if (Math.abs(e.x - p.x) > 700 || Math.abs(e.y - p.y) > 700) continue;
-      const hy = (e.look === 'bat' || e.look === 'cbat' || e.look === 'imp') ? e.r * 2.2 : e.r * 1.9;
+      const hy = LOS.FLYERS.has(e.look) ? e.r * 2.2 : e.r * 1.9;
       test(e.x, hy, e.y, Math.max(e.r * 1.35, 14), e);
     }
     for (const pr of R.map.props) if (pr.breakable && !pr.broken && Math.abs(pr.x - p.x) < 500 && Math.abs(pr.y - p.y) < 500) test(pr.x, 13, pr.y - 6, 17, pr);
@@ -438,6 +545,7 @@ const Render = (function () {
     placeCamera(R.cam.x, R.cam.y, sx, sz);
     updateWalls(map, p.x, p.y, dt);
     for (const b of run.breakables) if (b.pr.broken && b.obj.visible) b.obj.visible = false;
+    if (run.clouds) { const lim = map.w * T; for (const c of run.clouds) { c.position.x += c.userData.v * dt; if (c.position.x > lim + 200) c.position.x = -200; } }
     for (const f of run.fires) { f.fireG.visible = !!f.pr.lit; f.readyG.visible = !f.pr.lit && map.rooms[f.pr.room].cleared; }
 
     const vis = [];

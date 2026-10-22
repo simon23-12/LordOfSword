@@ -42,7 +42,9 @@ const Dungeon = (function () {
     return null;
   }
 
-  function generate(seed) {
+  /** style: 'dungeon' (Mauern) oder 'peaks' (Gebirgs-Plateaus mit Abgründen, Brücken und Felsnadeln) */
+  function generate(seed, style) {
+    const peaks = style === 'peaks';
     const rand = mulberry(seed || (Math.random() * 1e9) | 0);
     const n = LOS.NUM_ROOMS;
     const path = walkPath(rand, n) || Array.from({ length: n }, (_, i) => [i % COLS, Math.floor(i / COLS)]);
@@ -50,6 +52,7 @@ const Dungeon = (function () {
     const tiles = new Uint8Array(W * H);          // 0 Wand, 1 Boden
     const roomAt = new Int8Array(W * H).fill(-1);
     const corr = new Uint8Array(W * H);
+    const pillar = new Uint8Array(W * H);          // Felsnadeln (Gebirge)
     const rooms = [];
 
     path.forEach(([c, r], i) => {
@@ -61,11 +64,22 @@ const Dungeon = (function () {
       const room = { i, x, y, w, h, cx: x + (w >> 1), cy: y + (h >> 1), zone: Math.floor(i / LOS.BAL.roomsPerZone), boss, start, cleared: false, entered: false, enemies: 0 };
       rooms.push(room);
       for (let yy = y; yy < y + h; yy++) for (let xx = x; xx < x + w; xx++) { tiles[yy * W + xx] = 1; roomAt[yy * W + xx] = i; }
+      // Plateau-Ränder: Buchten und Absätze, damit die Umrisse natürlich wirken
+      if (peaks) {
+        const bites = 6 + Math.floor(rand() * 7);
+        for (let b = 0; b < bites; b++) {
+          const side = Math.floor(rand() * 4), len = 2 + Math.floor(rand() * 4), dep = 1 + Math.floor(rand() * 2);
+          let bx, by, bw, bh;
+          if (side < 2) { bx = x + 1 + Math.floor(rand() * Math.max(1, w - len - 1)); by = side === 0 ? y : y + h - dep; bw = len; bh = dep; }
+          else { by = y + 1 + Math.floor(rand() * Math.max(1, h - len - 1)); bx = side === 2 ? x : x + w - dep; bw = dep; bh = len; }
+          for (let yy = by; yy < by + bh; yy++) for (let xx = bx; xx < bx + bw; xx++) { tiles[yy * W + xx] = 0; roomAt[yy * W + xx] = -1; }
+        }
+      }
       // abgeschnittene Ecken
       if (!start) {
         for (const [cxr, cyr, sx, sy] of [[x, y, 1, 1], [x + w - 1, y, -1, 1], [x, y + h - 1, 1, -1], [x + w - 1, y + h - 1, -1, -1]]) {
-          if (rand() < 0.6) {
-            const s = 1 + Math.floor(rand() * 3);
+          if (rand() < (peaks ? 0.9 : 0.6)) {
+            const s = 1 + Math.floor(rand() * (peaks ? 4 : 3));
             for (let a = 0; a < s; a++) for (let b = 0; b < s - a; b++) {
               const tx = cxr + a * sx, ty = cyr + b * sy; tiles[ty * W + tx] = 0; roomAt[ty * W + tx] = -1;
             }
@@ -95,7 +109,7 @@ const Dungeon = (function () {
     // Säulen (Deckung gegen Rudel) – nie im Gang und nicht in der Raummitte
     for (const room of rooms) {
       if (room.start) continue;
-      const count = room.boss ? 6 : 2 + Math.floor(rand() * 4);
+      const count = room.boss ? 6 : 2 + Math.floor(rand() * (peaks ? 5 : 4));
       for (let k = 0; k < count; k++) {
         const sz = rand() < 0.5 ? 1 : 2;
         const px = room.x + 3 + Math.floor(rand() * (room.w - 6 - sz));
@@ -108,7 +122,7 @@ const Dungeon = (function () {
         // Bossraum: Mitte frei lassen
         if (room.boss && Math.abs(px - room.cx) < 5 && Math.abs(py - room.cy) < 4) ok = false;
         if (!ok) continue;
-        for (let yy = py; yy < py + sz; yy++) for (let xx = px; xx < px + sz; xx++) { tiles[yy * W + xx] = 0; roomAt[yy * W + xx] = -1; }
+        for (let yy = py; yy < py + sz; yy++) for (let xx = px; xx < px + sz; xx++) { tiles[yy * W + xx] = 0; roomAt[yy * W + xx] = -1; if (peaks) pillar[yy * W + xx] = 1; }
       }
     }
 
@@ -122,8 +136,9 @@ const Dungeon = (function () {
       // Wandfackeln an der Nordwand
       for (let xx = room.x + 2; xx < room.x + room.w - 1; xx += 5 + Math.floor(rand() * 3)) {
         if (isFloor(xx, room.y) && !isFloor(xx, room.y - 1)) {
-          props.push({ type: 'torch', x: xx * T + T / 2, y: room.y * T, tall: true, wall: true, room: room.i });
-          lights.push({ x: xx * T + T / 2, y: room.y * T + 8, h: 56, r: 270, flick: rand() * 10, room: room.i, strength: 1, col: '#ff9a50' });
+          if (peaks) props.push({ type: 'post', x: xx * T + T / 2, y: room.y * T + T * 0.45, tall: true, room: room.i }); // Fackelpfosten am Plateaurand
+          else props.push({ type: 'torch', x: xx * T + T / 2, y: room.y * T, tall: true, wall: true, room: room.i });
+          lights.push({ x: xx * T + T / 2, y: room.y * T + (peaks ? 20 : 8), h: 56, r: 270, flick: rand() * 10, room: room.i, strength: peaks ? 0.8 : 1, col: '#ff9a50' });
         }
       }
       if (room.boss) {
@@ -140,15 +155,16 @@ const Dungeon = (function () {
         props.push({ type: 'bonfire', x: room.cx * T + T / 2, y: room.cy * T + T / 2, tall: true, room: room.i, unlocks: room.i + 1, lit: false, light });
       }
       const area = room.w * room.h;
-      const decor = [['bones', 'skull', 'crack', 'web'], ['bones', 'coffin', 'crack', 'candle'], ['mushroom', 'goo', 'crack', 'mushroom'], ['crystal', 'shard', 'crack', 'crystal'], ['blood', 'spike', 'bones', 'blood']][z];
+      const decor = (LOS.ZONES[z] && LOS.ZONES[z].decor) || [['bones', 'skull', 'crack', 'web'], ['bones', 'coffin', 'crack', 'candle'], ['mushroom', 'goo', 'crack', 'mushroom'], ['crystal', 'shard', 'crack', 'crystal'], ['blood', 'spike', 'bones', 'blood']][z];
       const cnt = Math.floor(area / (room.start ? 30 : 14));
       for (let k = 0; k < cnt; k++) {
         const tx = room.x + 1 + Math.floor(rand() * (room.w - 2)), ty = room.y + 1 + Math.floor(rand() * (room.h - 2));
         if (!isFloor(tx, ty) || roomAt[ty * W + tx] !== room.i) continue;
         const type = decor[Math.floor(rand() * decor.length)];
-        const p = { type, x: tx * T + rand() * T, y: ty * T + rand() * T, a: rand() * 6.28, s: 0.7 + rand() * 0.6, tall: ['coffin', 'crystal', 'spike', 'candle'].includes(type), room: room.i };
+        const p = { type, x: tx * T + rand() * T, y: ty * T + rand() * T, a: rand() * 6.28, s: 0.7 + rand() * 0.6, tall: ['coffin', 'crystal', 'spike', 'candle', 'boulder', 'pine', 'snowpine', 'deadtree', 'cairn', 'icespike', 'crystalpeak'].includes(type), room: room.i };
         if (fireRoom && Math.hypot(p.x / T - (room.cx + 0.5), p.y / T - (room.cy + 0.5)) < 2.5) continue; // Platz für die Feuerstelle
         props.push(p);
+        if (type === 'icespike' || type === 'crystalpeak') lights.push({ x: p.x, y: p.y, h: 30, r: 150, flick: rand() * 10, room: room.i, strength: 0.6, color: true, col: type === 'icespike' ? '#9fe0ff' : '#5ee8d0' });
         if (type === 'crystal') lights.push({ x: p.x, y: p.y, h: 30, r: 150, flick: rand() * 10, room: room.i, strength: 0.7, color: true, col: '#6fd8ff' });
         if (type === 'mushroom' && rand() < 0.5) lights.push({ x: p.x, y: p.y, h: 12, r: 100, flick: rand() * 10, room: room.i, strength: 0.5, color: true, col: '#b072ff' });
         if (type === 'candle') lights.push({ x: p.x, y: p.y, h: 18, r: 100, flick: rand() * 10, room: room.i, strength: 0.6, col: '#ffb060' });
@@ -159,14 +175,14 @@ const Dungeon = (function () {
         for (let k = 0; k < nb; k++) {
           const tx = room.x + 1 + Math.floor(rand() * (room.w - 2)), ty = room.y + 1 + Math.floor(rand() * (room.h - 2));
           if (!isFloor(tx, ty) || roomAt[ty * W + tx] !== room.i || corr[ty * W + tx] || (fireRoom && Math.hypot(tx - room.cx, ty - room.cy) < 2.5)) continue;
-          props.push({ type: 'barrel', x: tx * T + T / 2, y: ty * T + T / 2 + 8, tall: true, breakable: true, hp: 1, room: room.i, z });
+          props.push({ type: peaks ? 'crate' : 'barrel', x: tx * T + T / 2, y: ty * T + T / 2 + 8, tall: true, breakable: true, hp: 1, room: room.i, z });
         }
       }
     }
 
     const start = rooms[0];
     return {
-      w: W, h: H, tiles, roomAt, corr, rooms, props, lights,
+      w: W, h: H, tiles, roomAt, corr, pillar, style: peaks ? 'peaks' : 'dungeon', rooms, props, lights,
       start: { x: start.cx * T + T / 2, y: start.cy * T + T / 2 },
       explored: new Uint8Array(W * H),
       isFloor,

@@ -25,15 +25,17 @@ const Game = (function () {
   function startRun() {
     const sv = Save.data;
     const diff = sv.difficulty;
-    const fires = sv.fires || [];
-    const startRoom = fires.includes(sv.startRoom | 0) ? sv.startRoom | 0 : 0; // 0 = Eingang, sonst Raum mit entzündeter Feuerstelle
-    const map = Dungeon.generate(BAL.dungeonSeed);
+    const world = sv.world | 0, wd = sv.wd ? sv.wd[world] : { fires: [], startRoom: 0 };
+    LOS.setWorld(world);
+    const fires = wd.fires || [];
+    const startRoom = fires.includes(wd.startRoom | 0) ? wd.startRoom | 0 : 0; // 0 = Eingang, sonst Beginn einer Zone mit entzündeter Feuerstelle
+    const map = Dungeon.generate(BAL.dungeonSeed + world * 7717, LOS.WORLDS[world].style);
     const slots = LOS.runeSlots(sv.level);
     const runes = sv.equipped.slice(0, slots).filter(Boolean);
     const S = LOS.derive(sv.level, sv.pts, runes);
     const sr = map.rooms[startRoom];
     R = {
-      map, flow: Dungeon.makeFlow(map), S, diff, startRoom, runes,
+      map, world, flow: Dungeon.makeFlow(map), S, diff, startRoom, runes,
       p: { x: sr.cx * T + T / 2, y: sr.cy * T + T / 2, r: 10, hp: S.maxHp, mana: S.maxMana, face: 0, swingT: -1, swingDur: 0.26, swingDir: 0, swingSide: 1, hitDone: true,
         atkCd: 0, target: null, anim: 0, moving: false, hurtT: 0, castT: 0, lastHurt: -99, regenAcc: 0, dead: false,
         lunge: 0, sprintT: 0, sprintCd: 0, sprintUsed: 0, sprinting: false, blocking: false, blockT: 0, blockFlash: 0, parryFlash: 0, dust: 0 },
@@ -71,7 +73,7 @@ const Game = (function () {
       x, y, r: st.r, hp: st.hp, maxHp: st.hp, dmg: st.dmg, cd: st.cd, spd: st.spd, range: st.range, xp: st.xp,
       state: 'sleep', pack, room, atkT: rr(0.3, st.cd), wind: 0, windMax: 0.3, wprev: 0, strikeT: 0, deadT: 0, flash: 0, anim: rr(0, 10), slowT: 0, slowF: 0,
       burn: null, kx: 0, ky: 0, stun: 0, flowT: 0, wakeT: rr(0, 0.3), elite: false, minion: !!opts.minion, dead: false,
-      special: look === 'slime' ? 'split' : look === 'golem' ? 'charge' : null, chargeT: rr(3, 6), dash: 0, dashX: 0, dashY: 0,
+      special: look === 'slime' ? 'split' : LOS.CHARGERS.has(look) ? 'charge' : null, chargeT: rr(3, 6), dash: 0, dashX: 0, dashY: 0,
       summonT: rr(2, 5), moving: false, sepx: 0, sepy: 0, mini: !!opts.mini, armored: false, tint: null,
     };
     if (e.ai === 'necro') e.dmg = LOS.enemyStats(zone, 'grunt', R.diff).dmg * 0.8;
@@ -102,7 +104,7 @@ const Game = (function () {
     if (room.boss) {
       const c = { x: room.cx * T + T / 2, y: (room.y + 4) * T + T / 2 };
       const B = LOS.BOSS, d = LOS.DIFFS[R.diff];
-      const e = makeEnemy(4, ['grunt', B.name, 'boss'], c.x, c.y, R.packId, room.i);
+      const e = makeEnemy(4, ['grunt', B.name, B.look || 'boss'], c.x, c.y, R.packId, room.i);
       Object.assign(e, { ai: 'boss', hp: B.hp * d.hp, maxHp: B.hp * d.hp, dmg: B.dmg * d.dmg, cd: B.cd, spd: B.spd, xp: B.xp * d.xp, r: B.r, range: 0, boss: true, summoned: {}, bt: 2, dash: 0, rageSnd: false });
       R.enemies.push(e); R.boss = e; room.enemies++;
       const pk = R.packId++;
@@ -185,7 +187,7 @@ const Game = (function () {
     const room = R.map.rooms[i];
     R.room = i;
     if (i > R.bestRoom) R.bestRoom = i;
-    Sound.setZone(room.zone);
+    Sound.setZone((room.zone + R.world * 2) % 5);
     if (!room.entered) {
       room.entered = true;
       if (i === R.startRoom || i % BAL.roomsPerZone === 0) banner(ZONES[room.zone].name, `Raum ${i + 1} von ${LOS.NUM_ROOMS}`, ZONES[room.zone].accent);
@@ -393,9 +395,10 @@ const Game = (function () {
   function lightFire(pr) {
     const sv = Save.data, p = R.p;
     pr.lit = true; pr.light.off = false;
-    if (!sv.fires.includes(pr.unlocks)) sv.fires.push(pr.unlocks);
-    sv.fires.sort((a, b) => a - b);
-    sv.startRoom = pr.unlocks; // der Beginn der nächsten Zone wird Startpunkt (im Lager änderbar)
+    const wd = sv.wd[R.world];
+    if (!wd.fires.includes(pr.unlocks)) wd.fires.push(pr.unlocks);
+    wd.fires.sort((a, b) => a - b);
+    wd.startRoom = pr.unlocks; // der Beginn der nächsten Zone wird Startpunkt (im Lager änderbar)
     Save.write();
     banner('Feuerstelle entzündet', `${ZONES[R.map.rooms[pr.unlocks].zone].name} ist jetzt dein Startpunkt`, '#ffb060');
     Sound.sfx('unlock'); shake(3);
@@ -452,8 +455,10 @@ const Game = (function () {
   function bloodColor(e) {
     if (e.look === 'slime' || e.look === 'spitter') return '#6fbf4a';
     if (BONE_LOOKS.includes(e.look)) return '#d8d2c0';
-    if (e.look === 'golem' || e.look === 'guard') return '#9aa5b3';
+    if (/golem$/.test(e.look) || e.look === 'guard' || e.look === 'titan') return '#9aa5b3';
     if (e.look === 'cbat') return '#58b9e8';
+    if (/^(frost|ice|yeti|crystal|giant)/.test(e.look)) return '#bfe6ff';
+    if (e.look === 'cloudfalcon' || e.look === 'skyguard' || e.look === 'windweaver') return '#f4e6b8';
     return '#a8272c';
   }
   function damageEnemy(e, amount, o) {
@@ -519,7 +524,7 @@ const Game = (function () {
       if (S.maxMana > 0 && Math.random() < BAL.manaOrbChance * f) dropPickup('mana', e.x, e.y);
     }
     if (sv.level >= BAL.magicUnlockLevel) {
-      const val = Math.max(1, Math.round((e.zone + 1) * d.ess));
+      const val = Math.max(1, Math.round((e.zone + 1) * d.ess * (1 + R.world)));
       if (Math.random() < (e.elite ? BAL.essenceEliteChance : BAL.essenceChance) * f) dropPickup('essence', e.x, e.y, null, val);
     }
     if (sv.level >= BAL.runeUnlockLevel) {
@@ -726,7 +731,7 @@ const Game = (function () {
     if (e.ai === 'necro') { /* Dunkler Strahl */ }
     const a = Math.atan2(p.y - e.y, p.x - e.x);
     const colors = { archer: '#d8c8a0', spitter: '#7fe04a', mage: '#7fd8ff', necro: '#b36bff' };
-    const sp = e.look === 'archer' ? 340 : 270;
+    const sp = LOS.ARROWERS.has(e.look) ? 340 : 270;
     R.eproj.push({ x: e.x, y: e.y, z: e.r * 2, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, dmg: e.dmg, r: 6, life: 2.2, color: colors[e.look] || '#fff', look: e.look, owner: e });
     Sound.sfx('shoot', 0.08);
   }
@@ -746,7 +751,7 @@ const Game = (function () {
   function bossAwake(e) {
     if (R.bossActive) return;
     R.bossActive = true;
-    banner(e.name, 'Besiege ihn, und Welt 1 liegt hinter dir!', '#ff6a4a');
+    banner(e.name, `Besiege ${R.world === 0 ? 'ihn, und Welt 1' : 'ihn, und Welt ' + (R.world + 1)} liegt hinter dir!`, '#ff6a4a');
     Sound.play('boss'); Sound.sfx('roar'); shake(8);
   }
   function bossSummon(e) {
@@ -760,7 +765,7 @@ const Game = (function () {
       burst(pos.x, pos.y, '#ff4a3a', 18, 180, 0.7, 3, -0.2, 10, true);
       R.fx.push({ k: 'ring', x: pos.x, y: pos.y, z: 3, r0: 8, r1: 60, t: 0, dur: 0.5, color: '#ff4a3a' });
     }
-    banner('Malgorath ruft seine Diener!', '', '#ff6a4a');
+    banner(LOS.BOSS.name.split(',')[0] + ' ruft seine Diener!', '', '#ff6a4a');
   }
   function updateBoss(e, dt, d) {
     const p = R.p;
@@ -817,7 +822,7 @@ const Game = (function () {
     R.fx.push({ k: 'beam', x: e.x, y: e.y, t: 0, dur: 1.6, color: '#ffd9a0', slim: true });
     for (let k = 0; k < 3; k++) dropRune(4, 2, e.x + rr(-30, 30), e.y + rr(-20, 20));
     for (let k = 0; k < 3; k++) dropPickup('hp', e.x, e.y);
-    if (Save.data.level >= BAL.magicUnlockLevel) for (let k = 0; k < BAL.essenceBoss; k++) dropPickup('essence', e.x, e.y, null, Math.max(1, Math.round(BAL.essenceBossTotal * LOS.DIFFS[R.diff].ess / BAL.essenceBoss)));
+    if (Save.data.level >= BAL.magicUnlockLevel) for (let k = 0; k < BAL.essenceBoss; k++) dropPickup('essence', e.x, e.y, null, Math.max(1, Math.round(BAL.essenceBossTotal * LOS.DIFFS[R.diff].ess * (1 + R.world) / BAL.essenceBoss)));
     // Diener sterben mit
     for (const o of R.enemies) if (!o.dead && o !== e && o.pack === e.pack && o.minion) { o.hp = 0; o.dead = true; o.deadT = 0; burst(o.x, o.y, '#d8d2c0', 10, 180, 0.7, 3, 1, 14); }
     const sv = Save.data;
@@ -1154,10 +1159,12 @@ const Game = (function () {
       sv.stats.clears++;
       Sound.play('none'); Sound.sfx('stinger_win');
     }
-    const newBest = R.bestRoom > sv.bestRoom;
-    if (newBest) sv.bestRoom = R.bestRoom;
+    const wd = sv.wd[R.world];
+    const newBest = R.bestRoom > wd.bestRoom;
+    if (newBest) wd.bestRoom = R.bestRoom;
+    if (how === 'win') wd.cleared = true; // schaltet die nächste Welt frei
     R.summary = {
-      won: how === 'win', room: R.bestRoom + 1, bestRoom: sv.bestRoom + 1, newBest,
+      won: how === 'win', world: R.world, room: R.bestRoom + 1, bestRoom: wd.bestRoom + 1, newBest,
       xp: R.xpGained, ess: R.essGained, kills: R.kills, time: R.time, lvStart: R.lvStart, lvEnd: sv.level,
       runes: R.runesFound.slice(), diff: R.diff, quit,
     };

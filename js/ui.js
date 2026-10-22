@@ -36,9 +36,8 @@ const App = (function () {
     const magEff = S.maxMana
       ? `Mana ${f0(S.maxMana)} <em>→ ${f0(nM.maxMana)}</em> · Zauberstärke ×${f1(LOS.spellPower(1, S.mag, 0))} <em>→ ×${f1(LOS.spellPower(1, nM.mag, 0))}</em>`
       : `Erster Punkt öffnet das Mana <em>→ ${f0(nM.maxMana)}</em>`;
-    // nur freigeschaltete Zauber zeigen
-    const chips = SPELLS.filter(s => sv.pts.mag >= s.unlock).map(s => `<span class="chip on" data-tip="${esc(`<b style="color:${s.color}">${s.name}</b>${s.desc}<br>Kosten ${s.cost} Mana · Taste ${Keys.labelFor('spell' + s.key)}`)}">${s.name}</span>`).join('')
-      + `<span class="note" style="width:100%">${SPELLS.some(s => sv.pts.mag < s.unlock) ? 'Mehr Punkte schalten neue Zauber frei.' : ''}</span>`;
+    // alle Zauber mit Voraussetzung (Zauberpunkte) zeigen
+    const chips = SPELLS.map(s => `<span class="chip ${sv.pts.mag >= s.unlock ? 'on' : ''}" data-tip="${esc(`<b style="color:${s.color}">${s.name}</b>${s.desc}<br>Kosten ${s.cost} Mana · Taste ${Keys.labelFor('spell' + s.key)}<br>Freigeschaltet ab ${s.unlock} Zauberpunkt${s.unlock > 1 ? 'en' : ''}`)}">${s.name} · ${s.unlock}</span>`).join('');
     const spr = S.sprint, nspr = nA.sprint;
     const atkEff = `Schwertschaden ${f0(S.dmg)} <em>→ ${f0(nA.dmg)}</em> · Hiebe/s ${f1(1 / S.interval)} <em>→ ${f1(1 / nA.interval)}</em>` + (spr
       ? `<br>Sprint ${f1(spr.dur)} s <em>→ ${f1(nspr.dur)}</em> · Pause ${f0(spr.cd)} s <em>→ ${f0(nspr.cd)}</em>`
@@ -85,13 +84,14 @@ const App = (function () {
   function renderRunes() {
     const sv = Save.data, el = $('runes-box');
     if (sv.level < BAL.runeUnlockLevel) {
-      el.innerHTML = `<h3>Runen</h3><div class="locked-box">Uralte Runen schlummern in den Tiefen des Verlieses.<br><br>Ab <b>Level ${BAL.runeUnlockLevel}</b> kannst du sie finden und einsetzen.<br><br><span class="note">Noch ${BAL.runeUnlockLevel - sv.level} Level.</span></div>`;
+      el.innerHTML = `<h3>Runen</h3><div class="locked-box">Uralte Runen schlummern in den Tiefen des Verlieses.<br><br>Ab <b>Level ${BAL.runeUnlockLevel}</b> kannst du sie finden und einsetzen.<br><br><span class="note">Noch ${BAL.runeUnlockLevel - sv.level} Level.<br>Weitere Runenplätze: Level ${BAL.runeSlotLevels.slice(1).join(', ')}.</span></div>`;
       return;
     }
     const slots = LOS.runeSlots(sv.level);
     let sl = '';
-    for (let i = 0; i < slots; i++) { // nur freigeschaltete Plätze zeigen
-      if (sv.equipped[i]) sl += `<div data-act="unequip" data-i="${i}">${runeHtml(sv.equipped[i])}</div>`;
+    for (let i = 0; i < BAL.runeSlotLevels.length; i++) {
+      if (i >= slots) sl += `<div class="rune locked" data-tip="${esc('<b>Gesperrt</b>Wird auf Level ' + BAL.runeSlotLevels[i] + ' frei.')}">Level<br>${BAL.runeSlotLevels[i]}</div>`;
+      else if (sv.equipped[i]) sl += `<div data-act="unequip" data-i="${i}">${runeHtml(sv.equipped[i])}</div>`;
       else sl += `<div class="rune empty">leer</div>`;
     }
     sv.runes.sort((a, b) => b.tier - a.tier || a.id.localeCompare(b.id));
@@ -119,15 +119,16 @@ const App = (function () {
     const sv = Save.data, el = $('spells-box');
     if (sv.level < BAL.magicUnlockLevel) { el.innerHTML = ''; return; }
     const rows = SPELLS.map((s, i) => {
-      if (sv.pts.mag < s.unlock) return ''; // noch nicht freigeschaltet: nichts verraten
+      const locked = sv.pts.mag < s.unlock;
       const lv = sv.spellUp[s.id] | 0, u = s.up, cost = LOS.spellUpCost(s, lv);
       const pips = Array.from({ length: u.max }, (_, k) => `<i class="${k < lv ? 'on' : ''}"></i>`).join('');
-      const can = cost !== null && sv.essence >= cost;
+      const can = !locked && cost !== null && sv.essence >= cost;
       const eff = cost === null ? `${u.text(lv)} <em>(Maximum)</em>` : `${u.text(lv)} <em>→ ${u.text(lv + 1)}</em>`;
       const tip = `<b style="color:${s.color}">${s.name} · ${u.label}</b>${s.desc}<br>Stufe ${lv} / ${u.max}` + (cost === null ? '' : `<br>Nächste Stufe: ${cost} Essenz`);
-      const btn = cost === null ? `<button class="btn" disabled>Max</button>`
+      const btn = locked ? `<button class="btn" disabled data-tip="${esc('<b>Gesperrt</b>Ab ' + s.unlock + ' Zauberpunkt' + (s.unlock > 1 ? 'en' : ''))}">${s.unlock} Pkt</button>`
+        : cost === null ? `<button class="btn" disabled>Max</button>`
         : `<button class="btn ess" data-act="spellup" data-i="${i}" ${can ? '' : 'disabled'} data-tip="${esc(can ? '<b>Verbessern</b>Kostet ' + cost + ' Essenz' : '<b>Zu wenig Essenz</b>Du brauchst ' + cost + ' (hast ' + sv.essence + ')')}">✦ ${cost}</button>`;
-      return `<div class="spup"><div class="sn" style="color:${s.color}" data-tip="${esc(tip)}">${s.name}<span class="pips">${pips}</span></div>${btn}<div class="se">${eff}</div></div>`;
+      return `<div class="spup ${locked ? 'locked' : ''}"><div class="sn" style="color:${s.color}" data-tip="${esc(tip)}">${s.name}<span class="pips">${pips}</span></div>${btn}<div class="se">${eff}</div></div>`;
     }).join('');
     el.innerHTML = `<div class="sub-h">Zauberkunst <span class="ess-total">✦ Essenz <b>${f0(sv.essence)}</b></span></div>${rows}
       <div class="note" style="margin-top:2px">Essenz (violette Kristalle) lassen Gegner ab Level ${BAL.magicUnlockLevel} fallen – Champions und Bosse mehr.</div>`;
@@ -137,11 +138,14 @@ const App = (function () {
     const sv = Save.data;
     $('seg-diff').innerHTML = LOS.DIFFS.map((d, i) => `<button data-act="diff" data-i="${i}" class="${sv.difficulty === i ? 'on' : ''}" data-tip="${esc(`<b>${d.name}</b>Gegner ×${d.hp} Leben, ×${d.dmg} Schaden<br>Erfahrung ×${d.xp}, bessere Runen, mehr Essenz`)}">${d.name}</button>`).join('');
     // Startpunkt: Eingang oder eine entzündete Feuerstelle
-    const spots = [0, ...sv.fires], cur = spots.includes(sv.startRoom) ? sv.startRoom : 0, zone = ZONES[Math.floor(cur / BAL.roomsPerZone)];
+    LOS.setWorld(sv.world);
+    const wd = Save.wd, worlds = LOS.WORLDS.map((w, i) => i).filter(i => Save.worldOpen(i)), world = LOS.WORLDS[sv.world];
+    $('seg-world').innerHTML = `<button data-act="world-prev" ${worlds.length < 2 ? 'disabled' : ''}>◀</button><span class="start-name" style="min-width:210px" data-tip="${esc(`<b>${world.name}</b>Empfohlen ab Level ${world.minLevel}<br>Boss: ${world.boss.name}`)}">${world.roman} · ${world.name}</span><button data-act="world-next" ${worlds.length < 2 ? 'disabled' : ''}>▶</button>`;
+    const spots = [0, ...wd.fires], cur = spots.includes(wd.startRoom) ? wd.startRoom : 0, zone = ZONES[Math.floor(cur / BAL.roomsPerZone)];
     $('seg-start').innerHTML = `<button data-act="start-prev" ${spots.length < 2 ? 'disabled' : ''}>◀</button><span class="start-name" data-tip="${esc(`<b>${cur ? zone.name : 'Eingang'}</b>Raum ${cur + 1} von ${LOS.NUM_ROOMS}`)}">${cur ? zone.short : 'Eingang'} · Raum ${cur + 1}</span><button data-act="start-next" ${spots.length < 2 ? 'disabled' : ''}>▶</button>`;
     $('start-hint').textContent = cur > 0 ? `Du beginnst in: ${zone.name}` : sv.unspent > 0 ? `Du hast ${sv.unspent} unverteilte Statuspunkte!` : 'Tipp: Säubere die letzte Kammer einer Zone und entzünde die Feuerstelle – dann startest du in der nächsten Zone.';
     const st = sv.stats;
-    $('camp-info').innerHTML = `Rekord: Raum ${sv.bestRoom + 1} von ${LOS.NUM_ROOMS}<br>${st.runs} Versuche · ${st.deaths} gefallen · ${st.clears} Siege · ${f0(st.kills)} Gegner besiegt`;
+    $('camp-info').innerHTML = `Rekord (${world.roman}): Raum ${wd.bestRoom + 1} von ${LOS.NUM_ROOMS}<br>${st.runs} Versuche · ${st.deaths} gefallen · ${st.clears} Siege · ${f0(st.kills)} Gegner besiegt`;
   }
 
   function renderCamp() {
@@ -299,7 +303,7 @@ const App = (function () {
     const levelTxt = sum.lvEnd > sum.lvStart ? `<div class="good"><span>Levelaufstieg</span><b>${sum.lvStart} → ${sum.lvEnd}</b></div>` : `<div><span>Level</span><b>${sum.lvEnd}</b></div>`;
     const runes = sum.runes.map(r => runeHtml(r)).join('');
     let note;
-    if (sum.won) note = `Malgorath, der Knochenfürst, ist gefallen! Doch die Tiefe birgt noch mehr …`;
+    if (sum.won) note = `${LOS.WORLDS[sum.world | 0].boss.name} ist gefallen!${(sum.world | 0) + 1 < LOS.WORLDS.length ? ' Eine neue Welt wartet …' : ''}`;
     else if (sum.quit) note = 'Du hast dich zurückgezogen.';
     else if (sum.newBest) note = `Neuer Rekord – du bist bis Raum ${sum.room} vorgedrungen!`;
     else note = sum.room <= 2 ? 'Das Verlies ist gnadenlos. Aber jeder Tod macht dich stärker.' : 'Die Tiefe fordert ihren Tribut. Verteile deine Punkte und versuche es erneut.';
@@ -349,9 +353,14 @@ const App = (function () {
         case 'discard': discard(); break;
         case 'diff': sv.difficulty = +t.dataset.i; Save.write(); Sound.sfx('click'); renderStart(); break;
         case 'start-prev': case 'start-next': {
-          const spots = [0, ...sv.fires]; let i = Math.max(0, spots.indexOf(sv.startRoom));
+          const wd = Save.wd, spots = [0, ...wd.fires]; let i = Math.max(0, spots.indexOf(wd.startRoom));
           i = (i + (act === 'start-next' ? 1 : -1) + spots.length) % spots.length;
-          sv.startRoom = spots[i]; Save.write(); Sound.sfx('click'); renderStart(); break;
+          wd.startRoom = spots[i]; Save.write(); Sound.sfx('click'); renderStart(); break;
+        }
+        case 'world-prev': case 'world-next': {
+          const open = LOS.WORLDS.map((w, i) => i).filter(i => Save.worldOpen(i)); let i = Math.max(0, open.indexOf(sv.world));
+          i = (i + (act === 'world-next' ? 1 : -1) + open.length) % open.length;
+          sv.world = open[i]; LOS.setWorld(sv.world); Save.write(); Sound.sfx('click'); renderStart(); break;
         }
       }
     });
@@ -424,7 +433,8 @@ const App = (function () {
     add('Level 40', () => { const sv = Save.data; while (sv.level < 40) { sv.level++; sv.unspent++; } });
     add('5 Runen', () => { for (let i = 0; i < 5; i++) Save.data.runes.push({ id: LOS.RUNES[Math.floor(Math.random() * LOS.RUNES.length)].id, tier: Math.floor(Math.random() * 3) }); });
     add('+200 Essenz', () => { Save.data.essence += 200; });
-    add('Alle Feuer', () => { Save.data.fires = Array.from({ length: LOS.NUM_ROOMS - 2 }, (_, i) => i + 1); });
+    add('Alle Feuer', () => { Save.wd.fires = [3, 6, 9, 12]; });
+    add('Welt II frei', () => { Save.data.wd[0].cleared = true; });
     add('Reset', () => { Save.wipe(); Save.create(); });
   }
 

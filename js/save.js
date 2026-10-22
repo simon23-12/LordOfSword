@@ -4,13 +4,15 @@ const Save = (function () {
   const KEY = 'lordofsword_save_v1';
   let data = null;
 
+  const worldData = () => ({ fires: [], startRoom: 0, bestRoom: 0, cleared: false });
+
   function fresh() {
     return {
       v: 1, level: 1, xp: 0, unspent: 0,
       pts: { atk: 0, def: 0, vit: 0, mag: 0 },
       runes: [], equipped: [],
       essence: 0, spellUp: {},
-      bestRoom: 0, fires: [], startRoom: 0, // fires = Räume mit entzündeter Feuerstelle (Startpunkte)
+      world: 0, wd: [worldData(), worldData()], // je Welt: Feuerstellen (Startpunkte), gewählter Startpunkt, Rekord, Boss besiegt
       difficulty: 0,
       stats: { runs: 0, kills: 0, deaths: 0, clears: 0, time: 0, xp: 0, bossKills: 0 },
       settings: { music: 0.6, sfx: 0.8 },
@@ -31,14 +33,25 @@ const Save = (function () {
     if (spent > o.level - 1) { o.pts = { atk: 0, def: 0, vit: 0, mag: 0 }; o.unspent = o.level - 1; }
     if (o.level < LOS.BAL.magicUnlockLevel && o.pts.mag > 0) { o.unspent += o.pts.mag; o.pts.mag = 0; }
     // Alte Spielstände: freigeschaltete Zonen werden zu entzündeten Feuerstellen am Zonenanfang
-    if (!Array.isArray(d.fires)) {
+    if (!Array.isArray(d.fires) && !Array.isArray(d.wd)) {
       o.fires = [];
       for (let z = 1; z <= (d.zoneUnlock | 0); z++) o.fires.push(z * LOS.BAL.roomsPerZone);
       o.startRoom = Math.min(d.startZone | 0, d.zoneUnlock | 0) * LOS.BAL.roomsPerZone;
     }
+    // Welt-Daten: ältere Spielstände hatten Feuer/Startpunkt/Rekord nur für die erste Welt
     const per = LOS.BAL.roomsPerZone; // gültige Startpunkte: Beginn der Zonen 2 bis 5
-    o.fires = [...new Set(o.fires.map(n => n | 0).filter(n => n >= per && n % per === 0 && n < LOS.NUM_ROOMS - 1))].sort((a, b) => a - b);
-    o.startRoom = o.fires.includes(o.startRoom | 0) ? o.startRoom | 0 : 0;
+    const wd0 = Array.isArray(d.wd) ? d.wd : [{ fires: o.fires, startRoom: o.startRoom, bestRoom: d.bestRoom, cleared: (f.stats.clears | 0) > 0 || ((d.stats && d.stats.clears) | 0) > 0 }];
+    o.wd = LOS.WORLDS.map((_, i) => {
+      const w = Object.assign(worldData(), wd0[i] || {});
+      w.fires = [...new Set((w.fires || []).map(n => n | 0).filter(n => n >= per && n % per === 0 && n < LOS.NUM_ROOMS - 1))].sort((a, b) => a - b);
+      w.startRoom = w.fires.includes(w.startRoom | 0) ? w.startRoom | 0 : 0;
+      w.bestRoom = Math.max(0, Math.min(LOS.NUM_ROOMS - 1, w.bestRoom | 0)); w.cleared = !!w.cleared;
+      return w;
+    });
+    delete o.fires; delete o.startRoom; delete o.bestRoom;
+    o.world = Math.max(0, Math.min(LOS.WORLDS.length - 1, o.world | 0));
+    if (!o.wd[o.world - 1 < 0 ? 0 : o.world - 1].cleared && o.world > 0) o.world = 0; // Welt nur nach dem Sieg über den vorherigen Boss
+    o.world = o.world | 0;
     o.difficulty = Math.max(0, Math.min(LOS.DIFFS.length - 1, o.difficulty | 0));
     delete o.zoneUnlock; delete o.startZone; delete o.diffUnlocked;
     if (!o.settings.keys || typeof o.settings.keys !== 'object') delete o.settings.keys;
@@ -92,6 +105,9 @@ const Save = (function () {
   return {
     load, write, create, wipe, exportCode, importCode, exportJSON, importJSON, fileName,
     get data() { return data; },
+    /** Daten der gewählten Welt (Feuerstellen, Startpunkt, Rekord) */
+    get wd() { return data.wd[data.world]; },
+    worldOpen(i) { return i === 0 || !!(data && data.wd[i - 1] && data.wd[i - 1].cleared); },
     get exists() { try { return !!localStorage.getItem(KEY); } catch (e) { return false; } },
   };
 })();

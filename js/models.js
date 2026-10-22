@@ -226,15 +226,44 @@ const Models = (function () {
     rig.body.rotation.z = lunge * 0.3 * -1;
   }
 
+  /** Wolf: schlanker Vierbeiner (nutzt die Beast-Animation) */
+  function wolf(o) {
+    const g = new THREE.Group(), col = M(o.col, { sm: true }), dark = M(o.dark || o.col, { sm: true }), belly = M(o.belly || o.col, { sm: true });
+    const rig = { g, h: 1.9, kind: 'beast', o: { legs: false }, mv: 0, legs: [], tail: [] };
+    rig.body = G(g, 0, 0.95, 0);
+    P(rig.body, 'sph', col, [1.5, 0.78, 0.7], [0, 0, 0]);
+    P(rig.body, 'sph', col, [0.85, 0.86, 0.78], [0.7, 0.08, 0]);
+    P(rig.body, 'sph', belly, [1.3, 0.45, 0.55], [0, -0.3, 0]);
+    for (let i = 0; i < 4; i++) P(rig.body, 'cone', dark, [0.2, 0.42, 0.28], [0.8 - i * 0.55, 0.78 - Math.abs(i - 1) * 0.04, 0], [0, 0, -0.35]);
+    const head = G(rig.body, 1.5, 0.35, 0); rig.head = head;
+    P(head, 'sph', col, [0.55, 0.48, 0.44], [0, 0, 0]);
+    P(head, 'box', dark, [0.62, 0.26, 0.3], [0.55, -0.1, 0]);
+    P(head, 'sph', M('#16110e'), [0.1, 0.09, 0.1], [0.88, -0.02, 0]);
+    for (const s of [-1, 1]) {
+      P(head, 'cone', dark, [0.17, 0.46, 0.1], [-0.18, 0.5, s * 0.3], [s * 0.15, 0, 0.1]);
+      P(head, 'sph', eye(o.eye || '#ffb82a', 2.2), [0.09, 0.08, 0.08], [0.32, 0.12, s * 0.22]);
+      P(head, 'cone', M('#f1ead8'), [0.04, 0.12, 0.04], [0.72, -0.26, s * 0.1], [PI, 0, 0]);
+    }
+    let par = G(rig.body, -1.45, 0.12, 0);
+    for (let i = 0; i < 4; i++) { const seg = G(par, 0, 0, 0); P(seg, 'sph', i < 3 ? col : dark, [0.42 - i * 0.05, 0.22, 0.22], [-0.3, 0, 0]); const nx = G(seg, -0.55, 0, 0); rig.tail.push(seg); par = nx; }
+    for (let i = 0; i < 4; i++) {
+      const fx = i < 2 ? 0.85 : -0.85, s = i % 2 ? 1 : -1;
+      const lg = G(rig.body, fx, -0.22, s * 0.42); L(lg, 0.9, 0.24, dark); P(lg, 'box', dark, [0.4, 0.12, 0.2], [0.1, -0.9, 0]); rig.legs.push({ g: lg, k: i, s });
+    }
+    rig.anim = animBeast;
+    return rig;
+  }
+
   function bat(o) {
     const g = new THREE.Group(), col = M(o.col), dark = M(o.dark || o.col, { ds: true });
     const rig = { g, h: 2.9, kind: 'bat', o, hover: 2.0 };
     rig.body = G(g, 0, 0, 0);
     P(rig.body, 'sph', col, [0.7, 0.85, 0.65], [0, 0, 0]);
     P(rig.body, 'sph', col, [0.5, 0.5, 0.5], [0.55, 0.3, 0]);
+    if (o.eagle) P(rig.body, 'cone', M(o.beak || '#e8b84a', { t: 'p' }), [0.16, 0.5, 0.16], [1.12, 0.26, 0], [0, 0, -PI / 2]);
     for (const s of [-1, 1]) {
-      P(rig.body, 'cone', col, [0.16, 0.45, 0.14], [0.45, 0.8, s * 0.28]);
-      P(rig.body, 'sph', eye('#ff3a3a', 2), [0.1, 0.1, 0.1], [0.95, 0.38, s * 0.22]);
+      if (!o.eagle) P(rig.body, 'cone', col, [0.16, 0.45, 0.14], [0.45, 0.8, s * 0.28]);
+      P(rig.body, 'sph', eye(o.eye || '#ff3a3a', 2), [0.1, 0.1, 0.1], [0.95, 0.38, s * 0.22]);
       if (o.horns) P(rig.body, 'cone', M('#e8dcc0'), [0.1, 0.5, 0.1], [0.5, 0.9, s * 0.38], [s * 0.4, 0, -0.2]);
     }
     if (o.crystals) for (let i = 0; i < 3; i++) P(rig.body, 'oct', M('#9fe8ff', { em: '#58b9e8', ei: 1.2 }), [0.14, 0.4, 0.14], [-0.25 - i * 0.12, 0.7 - i * 0.1, (i - 1) * 0.3], [0, 0, 0.4]);
@@ -272,8 +301,9 @@ const Models = (function () {
     return rig;
   }
 
-  function golem() {
-    const g = new THREE.Group(), rock = M('#6c7686', { t: 'p', sh: 20 }), dark = M('#545d6b'), cry = M('#7bd0ff', { em: '#4fb8ff', ei: 1.4 });
+  function golem(o) {
+    o = o || {};
+    const g = new THREE.Group(), rock = M(o.rock || '#6c7686', { t: 'p', sh: 20 }), dark = M(o.dark || '#545d6b'), cry = M(o.cry || '#7bd0ff', { em: o.cryEm || '#4fb8ff', ei: 1.4 });
     const rig = { g, h: 4.0, kind: 'golem', mv: 0 };
     rig.legL = G(g, 0, 1.3, -0.55); rig.legR = G(g, 0, 1.3, 0.55);
     for (const lg of [rig.legL, rig.legR]) { L(lg, 1.3, 0.95, dark); P(lg, 'box', rock, [1.2, 0.4, 0.9], [0.1, -1.3, 0]); }
@@ -283,7 +313,7 @@ const Models = (function () {
     for (const [x, y, z, s] of [[0.5, 1.6, -0.6, 0.35], [0.7, 1.2, 0.5, 0.45], [-0.2, 2.0, 0.7, 0.3], [-0.7, 1.7, -0.5, 0.4]]) P(rig.torso, 'oct', cry, [s * 0.5, s * 1.4, s * 0.5], [x, y, z], [0.3, 0, 0.4]);
     rig.head = G(rig.torso, 0.25, 2.25, 0);
     P(rig.head, 'box', rock, [0.9, 0.85, 1.1], [0, 0.25, 0]);
-    for (const s of [-1, 1]) P(rig.head, 'box', eye('#7bd0ff', 2.4), [0.08, 0.14, 0.24], [0.46, 0.3, s * 0.28]);
+    for (const s of [-1, 1]) P(rig.head, 'box', eye(o.eye || '#7bd0ff', 2.4), [0.08, 0.14, 0.24], [0.46, 0.3, s * 0.28]);
     const arm = s => { const a = G(rig.torso, 0, 1.9, s * 1.55); L(a, 1.9, 0.7, rock); P(a, 'box', dark, [0.9, 0.9, 0.9], [0.1, -2.0, 0]); return a; };
     rig.armL = arm(-1); rig.armR = arm(1);
     rig.anim = (r, e) => {
@@ -300,20 +330,21 @@ const Models = (function () {
     return rig;
   }
 
-  function boss() {
-    const g = new THREE.Group(), bone = M('#d8d0b6', { t: 'p', sh: 30 }), dark = M('#2a2420'), gold = M('#e0b236', { t: 'p', sh: 90, sp: '#ffe9a0' });
-    const rig = { g, h: 5.4, kind: 'boss', mv: 0, eyes: [], scale: 0.8 };
+  function boss(o) {
+    o = o || {};
+    const g = new THREE.Group(), bone = M(o.bone || '#d8d0b6', { t: 'p', sh: 30 }), dark = M(o.dark || '#2a2420'), gold = M(o.gold || '#e0b236', { t: 'p', sh: 90, sp: '#ffe9a0' });
+    const rig = { g, h: 5.4, kind: 'boss', mv: 0, eyes: [], scale: 0.8, eyeCol: o.eye || '#ff9a3a' };
     rig.legL = G(g, 0, 1.5, -0.6); rig.legR = G(g, 0, 1.5, 0.6);
     for (const lg of [rig.legL, rig.legR]) { L(lg, 1.5, 0.6, bone); P(lg, 'box', dark, [1.1, 0.4, 0.8], [0.2, -1.5, 0]); }
     rig.torso = G(g, 0, 1.5, 0);
     P(rig.torso, 'box', bone, [1.1, 1.8, 1.9], [0, 1.0, 0]);
     for (let i = 0; i < 4; i++) P(rig.torso, 'box', dark, [0.1, 0.12, 1.5], [0.56, 0.45 + i * 0.38, 0]);
-    P(rig.torso, 'box', M('#ff6a2a', { em: '#ff6a2a', ei: 1.2 }), [0.3, 0.9, 0.6], [0.2, 1.1, 0]);
+    P(rig.torso, 'box', M(o.glow || '#ff6a2a', { em: o.glow || '#ff6a2a', ei: 1.2 }), [0.3, 0.9, 0.6], [0.2, 1.1, 0]);
     for (const s of [-1, 1]) { P(rig.torso, 'sph', M('#9a9484', { t: 'p' }), [0.65, 0.5, 0.65], [0, 1.95, s * 1.25]); for (let i = 0; i < 3; i++) P(rig.torso, 'cone', M('#c9c2ac'), [0.14, 0.7, 0.14], [0, 2.4, s * (0.95 + i * 0.28)], [s * 0.2 * (i - 1) * 0, 0, 0]); }
-    rig.cape = G(rig.torso, -0.6, 2.0, 0); P(rig.cape, 'box', M('#5a1218', { ds: true }), [0.08, 3.2, 2.6], [0, -1.6, 0]);
+    rig.cape = G(rig.torso, -0.6, 2.0, 0); P(rig.cape, 'box', M(o.cape || '#5a1218', { ds: true }), [0.08, 3.2, 2.6], [0, -1.6, 0]);
     rig.head = G(rig.torso, 0.1, 2.4, 0);
     P(rig.head, 'sph', bone, [0.8, 0.82, 0.76], [0, 0.4, 0]); P(rig.head, 'box', bone, [0.55, 0.35, 0.7], [0.3, -0.1, 0]);
-    for (const s of [-1, 1]) { P(rig.head, 'sph', M('#14090a'), [0.22, 0.26, 0.2], [0.65, 0.5, s * 0.3]); const ee = P(rig.head, 'sph', eye('#ff9a3a', 2.6), [0.11, 0.11, 0.11], [0.78, 0.5, s * 0.3]); rig.eyes.push(ee); }
+    for (const s of [-1, 1]) { P(rig.head, 'sph', M('#14090a'), [0.22, 0.26, 0.2], [0.65, 0.5, s * 0.3]); const ee = P(rig.head, 'sph', eye(o.eye || '#ff9a3a', 2.6), [0.11, 0.11, 0.11], [0.78, 0.5, s * 0.3]); rig.eyes.push(ee); }
     const crown = G(rig.head, 0, 1.05, 0);
     P(crown, 'cyl', gold, [0.82, 0.3, 0.8], [0, 0, 0]);
     for (let i = 0; i < 6; i++) { const a = i / 6 * TAU; P(crown, 'cone', gold, [0.15, 0.6, 0.15], [Math.cos(a) * 0.75, 0.4, Math.sin(a) * 0.75]); }
@@ -337,7 +368,7 @@ const Models = (function () {
       r.armR.rotation.z = rz; r.armL.rotation.z = lz; r.hand.rotation.z = hz; r.torso.rotation.z = lean; r.torso.rotation.y = yaw;
       r.torso.position.y = 1.5 + Math.sin(e.anim * 2) * 0.04;
       r.cape.rotation.z = -0.08 - r.mv * 0.35 + Math.sin(e.anim * 3) * 0.05;
-      const ec = e.enrage ? '#ff2a1a' : '#ff9a3a';
+      const ec = e.enrage ? '#ff2a1a' : r.eyeCol;
       for (const ee of r.eyes) ee.material = eye(ec, 2.8);
     };
     return rig;
@@ -362,6 +393,28 @@ const Models = (function () {
     necro: () => humanoid({ skin: '#cbb7a0', cloth: '#3a2150', legs: '#2a1740', head: 'hood', eye: '#9dff6a', weapon: 'staff', gem: '#9dff6a', trim: '#7a3fa8' }),
     demon: () => humanoid({ skin: '#a3262a', cloth: '#8a1c20', legs: '#6e1519', head: 'horned', headCol: '#b32b2f', weapon: 'club', bulk: 1.3, belly: true }),
     boss: () => boss(),
+    // Welt 2: Zackengebirge
+    wolf: () => wolf({ col: '#6b6458', dark: '#4a443c', belly: '#8a8272', eye: '#ffb82a' }),
+    frostwolf: () => wolf({ col: '#d6e4f0', dark: '#a8bfd4', belly: '#eef5fb', eye: '#7fe8ff' }),
+    eagle: () => bat({ col: '#7a5a3a', dark: '#5a4028', eagle: true, eye: '#ffd24a' }),
+    bandit: () => humanoid({ skin: '#c9a67c', cloth: '#6a4a32', legs: '#3e3a34', head: 'face', headCol: '#d1ae84', eye: '#f2d98a', weapon: 'sword', wcol: '#9aa0aa', bulk: 1.1, trim: '#8a2a22', cape: '#4a2c1c' }),
+    banditarcher: () => humanoid({ skin: '#c9a67c', cloth: '#3a4a32', legs: '#33382a', head: 'hood', eye: '#f2d98a', weapon: 'bow', cape: '#2a3a24' }),
+    frostwarrior: () => humanoid({ skin: '#b8d0e0', cloth: '#5a7896', legs: '#3e5670', head: 'helm', headCol: '#9fb8d0', eye: '#9fe8ff', pauld: '#cfe4f4', weapon: 'great', wcol: '#cfe8ff', bulk: 1.2, trim: '#9fe0ff' }),
+    icemage: () => humanoid({ skin: '#cfe0ec', cloth: '#2a6a9a', legs: '#1d4a70', head: 'hood', eye: '#9fffff', weapon: 'staff', gem: '#9fe8ff', trim: '#cdeeff' }),
+    yeti: () => humanoid({ skin: '#f0f4f8', cloth: '#e0e8f0', legs: '#d0dae6', head: 'face', headCol: '#f4f8fb', eye: '#6fd8ff', weapon: 'club', hunch: 1, bulk: 1.5, belly: true }),
+    harpy: () => bat({ col: '#cfc6e6', dark: '#5a4a8a', tail: true, eye: '#d8c8ff' }),
+    dwarf: () => humanoid({ skin: '#d9a980', cloth: '#7a4a2a', legs: '#4a3a2a', head: 'helm', headCol: '#8a6a4a', eye: '#ffcf6a', pauld: '#a08060', weapon: 'great', wcol: '#b8bcc4', bulk: 1.5, trim: '#d9b94a', belly: true }),
+    stormshaman: () => humanoid({ skin: '#c9b8a0', cloth: '#4a3a7a', legs: '#2e2450', head: 'hood', eye: '#fff08a', weapon: 'staff', gem: '#fff08a', trim: '#c9b8ff' }),
+    rockgolem: () => golem({ rock: '#7a6a58', dark: '#5a4c3e', cry: '#c9b8ff', cryEm: '#8a6aff', eye: '#ffcf6a' }),
+    crystalfalcon: () => bat({ col: '#5ee8d0', dark: '#2a9a8a', crystals: true, eagle: true, eye: '#c8fff4' }),
+    crystalguard: () => humanoid({ skin: '#7ad6c8', cloth: '#2a7a8a', legs: '#1d5a68', head: 'helm', headCol: '#5ee8d0', eye: '#c8fff4', pauld: '#9af4e8', weapon: 'great', wcol: '#bffff4', bulk: 1.25, trim: '#5ee8d0' }),
+    crystalseer: () => humanoid({ skin: '#cfeee8', cloth: '#1d6a70', legs: '#134a50', head: 'hood', eye: '#c8fff4', weapon: 'staff', gem: '#5ee8d0', trim: '#9af4e8' }),
+    crystalgolem: () => golem({ rock: '#4ea8a8', dark: '#2d6a70', cry: '#9ffff0', cryEm: '#3ee8c8', eye: '#c8fff4' }),
+    cloudfalcon: () => bat({ col: '#fff0c8', dark: '#d9b86a', eagle: true, eye: '#fff6c0' }),
+    skyguard: () => humanoid({ skin: '#f2e8d0', cloth: '#e8dcc0', legs: '#cfc4a8', head: 'helm', headCol: '#f0e4c0', eye: '#fff2a0', plume: '#ffd24a', pauld: '#ffd24a', weapon: 'great', wcol: '#fff4d0', bulk: 1.2, trim: '#ffd24a', cape: '#d9b94a' }),
+    windweaver: () => humanoid({ skin: '#e8dcc8', cloth: '#c9b88a', legs: '#a89868', head: 'hood', eye: '#9fe8ff', weapon: 'staff', gem: '#c8f0ff', trim: '#ffe08a' }),
+    titan: () => golem({ rock: '#c8c0a8', dark: '#8a826c', cry: '#ffe08a', cryEm: '#ffc84a', eye: '#ffe08a' }),
+    giant: () => boss({ bone: '#aebdd0', dark: '#2a3340', gold: '#9fe0ff', cape: '#2a4a78', glow: '#7fd8ff', eye: '#9fe8ff' }),
   };
   function enemy(look) { return (LOOKS[look] || LOOKS.skeleton)(); }
 
@@ -707,6 +760,40 @@ const Models = (function () {
         g.userData.fireG = fireG; g.userData.readyG = readyG;
         break;
       }
+      case 'boulder':
+        for (const [x, z, a, b, c, col] of [[0, 0, 16, 12, 14, '#6e6a62'], [13, 6, 9, 7, 8, '#7a766c'], [-11, -6, 8, 6, 7, '#615d56']]) P(g, 'sph', M(col, { sm: true }), [a, b, c], [x, b * 0.6, z], [0, x, 0.1]);
+        break;
+      case 'pine': case 'snowpine': {
+        P(g, 'cyl', M('#4a3322'), [3, 22, 3], [0, 11, 0]);
+        const snow = type === 'snowpine';
+        for (const [r, h, y] of [[19, 26, 30], [14, 24, 46], [9.5, 20, 61]]) {
+          P(g, 'cone', M(snow ? '#2f5a44' : '#2c5a30', { sm: true }), [r, h, r], [0, y, 0]);
+          if (snow) P(g, 'cone', M('#eef5fb'), [r * 0.82, h * 0.62, r * 0.82], [0, y + h * 0.2, 0]);
+        }
+        break;
+      }
+      case 'deadtree': {
+        P(g, 'cyl', M('#3a2e26'), [3.6, 42, 3.6], [0, 21, 0], [0, 0, 0.08]);
+        for (const [y, rz, ry, l] of [[26, 0.9, 0.5, 18], [34, -0.8, 2.4, 15], [40, 0.6, 4.2, 11]]) { const b = G(g, 0, y, 0); b.rotation.y = ry; P(b, 'cyl', M('#3a2e26'), [1.5, l, 1.5], [l * 0.35, l * 0.35, 0], [0, 0, -rz]); }
+        break;
+      }
+      case 'cairn':
+        for (const [r, h, y] of [[14, 6, 3], [11, 5, 9.5], [8, 5, 15], [5, 4, 20]]) P(g, 'cyl', M('#8a867c', { sm: true }), [r, h, r], [0, y, 0], [0, y, 0.05]);
+        break;
+      case 'icespike':
+        for (const [x, z, s, rz] of [[0, 0, 1, 0], [10, 7, 0.65, 0.35], [-9, 6, 0.55, -0.4], [5, -9, 0.6, 0.2]]) P(g, 'oct', M('#a8e8ff', { em: '#6fd0ff', ei: 1.0, op: 0.92 }), [6.5 * s, 34 * s, 6.5 * s], [x, 26 * s, z], [0, x, rz]);
+        break;
+      case 'crystalpeak':
+        for (const [x, z, s, rz] of [[0, 0, 1.15, 0], [11, 5, 0.7, 0.3], [-10, 6, 0.6, -0.35], [3, -10, 0.65, 0.2], [-6, -6, 0.5, -0.1]]) P(g, 'oct', M('#5ee8d0', { em: '#2ad8b8', ei: 1.2, op: 0.9 }), [7 * s, 40 * s, 7 * s], [x, 30 * s, z], [0, x, rz]);
+        break;
+      case 'post':
+        P(g, 'cyl', M('#4a3524'), [2.6, 46, 2.6], [0, 23, 0]); P(g, 'cyl', iron, [7.5, 5, 7.5], [0, 48, 0]);
+        for (const [w, h, c, dx] of [[12, 22, '#ff9a3a', 0], [7.5, 17, '#ffd070', 0.6]]) { const f = FX.flame(w, h, c, 1.3); f.position.set(dx, 50, 0); g.add(f); }
+        break;
+      case 'crate':
+        P(g, 'box', M('#8a6a42'), [22, 22, 22], [0, 11, 0]); for (const y of [3, 19]) P(g, 'box', M('#5a4328'), [23, 3, 23], [0, y, 0]);
+        P(g, 'box', M('#6a4f30'), [23, 3, 3], [0, 11, 0]); P(g, 'box', M('#6a4f30'), [3, 3, 23], [0, 11, 0]);
+        break;
       case 'brazier':
         P(g, 'cyl', iron, [3, 20, 3], [0, 10, 0]); P(g, 'cyl', M('#2c282a', { t: 'p' }), [14, 9, 14], [0, 24, 0]);
         for (const [w, h, c, dx] of [[24, 44, '#ff8a2a', 0], [16, 34, '#ffc060', 2], [10, 26, '#fff0b0', -2]]) { const f = FX.flame(w, h, c, 1.3); f.position.set(dx, 28, 0); g.add(f); }

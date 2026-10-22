@@ -308,7 +308,7 @@ const FX = (function () {
       const tip = new THREE.Mesh(coneGeo, m); tip.scale.set(5, 14, 5); tip.rotation.z = -PI / 2; tip.position.x = 24;
       g.add(shaft, tip); mats.push(m);
       const tr = new THREE.Mesh(coneGeo, add('#ffffff', 0.35, 1)); tr.scale.set(3, 30, 3); tr.rotation.z = PI / 2; tr.position.x = -20; g.add(tr); mats.push(tr.material);
-    } else if (b.look === 'archer') {
+    } else if (LOS.ARROWERS.has(b.look)) {
       const m = new THREE.MeshLambertMaterial({ color: '#d8c8a0' });
       const shaft = new THREE.Mesh(sphGeo, m); shaft.scale.set(13, 0.9, 0.9);
       const tip = new THREE.Mesh(coneGeo, new THREE.MeshPhongMaterial({ color: '#cfd4de' })); tip.scale.set(2.2, 6, 2.2); tip.rotation.z = -PI / 2; tip.position.x = 13;
@@ -321,7 +321,7 @@ const FX = (function () {
     }
     const v = view(g, (d, now) => {
       g.position.set(d.x, d.z || 22, d.y); g.rotation.y = -Math.atan2(d.vy, d.vx);
-      v.light = d.look !== 'spear' && d.look !== 'archer' ? { x: d.x, y: d.y, h: d.z || 22, color: d.color, intensity: 18000 } : null;
+      v.light = d.look !== 'spear' && !LOS.ARROWERS.has(d.look) ? { x: d.x, y: d.y, h: d.z || 22, color: d.color, intensity: 18000 } : null;
     }, mats);
     return v;
   }

@@ -28,6 +28,7 @@ Das Schwert trifft alle Gegner im Schwungbogen; Hiebe wechseln die Seite, haben 
 
 ## Spielprinzip
 
+- **Welten:** Nach dem Sieg über Malgorath öffnet sich im Lager unter „Welt“ (◀ ▶) **Welt II – Das Zackengebirge**: Plateaus über den Wolken, durch Felsbrücken verbunden, mit neuen Gegnern (Wölfe, Räuber, Yetis, Harpyien, Golems …) und dem Sturmriesen Thrymgar als Boss. Empfohlen ab etwa Level 40; die Gegner sind zäh, Sterben gehört dazu. Startpunkte (Feuerstellen), Rekord und Schwierigkeit gelten je Welt. Das Kartenformat entsteht in `js/dungeon.js` (Stil `peaks`), Werte in `PEAKS_ZONES` in `js/data.js`.
 - **Run = ein Abstieg ins Verlies** (15 Räume in 5 Zonen, am Ende der Boss Malgorath). Das Verlies ist **immer dasselbe** (gleiche Räume, gleiche Gegner und Champions) – `BAL.dungeonSeed` in `js/data.js`, `0` = zufällig. Stirbst du, gehst du ins Lager zurück – XP, Level und Runen bleiben dir.
 - **XP → Statuspunkte:** Jedes Level gibt 1 Punkt. Die XP pro Level steigen stetig, die einfachen Gegner der ersten Zonen geben aber immer gleich viel – du musst also tiefer vordringen.
 - **Werte:** Angriff, Verteidigung, Leben – und **Zauber**, der erst ab **Level 10** existiert. Zauber werden durch investierte Zauberpunkte freigeschaltet

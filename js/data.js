@@ -83,7 +83,7 @@
     necro:  { hp: 40, dmg: 0,  cd: 6,   spd: 60,  xp: 9,   r: 12, ai: 'necro', range: 330 },
   };
 
-  const ZONES = [
+  const DUNGEON_ZONES = [
     { name: 'Verlassenes Verlies', short: 'Verlies',
       hpM: 2.0, dmgM: 1.9, xpM: 1.0,
       mobs: [['swarm', 'Ratte', 'rat', 4], ['grunt', 'Skelett', 'skeleton', 4], ['flyer', 'Fledermaus', 'bat', 2]],
@@ -106,11 +106,70 @@
       floor: ['#3a2427', '#321e21'], wall: ['#2a1115', '#16090b'], accent: '#ff4a3a', light: 'rgba(255,80,60,', fog: '#0c0405' },
   ];
 
-  const BOSS = {
-    name: 'Malgorath, der Knochenfürst', hp: 9000, dmg: 40, cd: 1.4, spd: 70, xp: 9000, r: 34,
+  const DUNGEON_BOSS = {
+    name: 'Malgorath, der Knochenfürst', hp: 9000, dmg: 40, cd: 1.4, spd: 70, xp: 9000, r: 34, look: 'boss',
   };
 
-  const NUM_ROOMS = ZONES.length * BAL.roomsPerZone; // letzter Raum = Boss
+  /* ------------------------------------------------------------ Welt 2: Das Zackengebirge (Plateaus über den Wolken) */
+  // Erwartetes Level beim Betreten: ca. 40. Gegner sind stark (viel Leben), die Werte stehen hier und lassen sich per tools/botsim.js (WORLD=1) prüfen.
+  const PEAKS_ZONES = [
+    { name: 'Windumtoste Hänge', short: 'Hänge',
+      hpM: 45, dmgM: 5.0, xpM: 70.0,
+      mobs: [['swarm', 'Bergwolf', 'wolf', 4], ['grunt', 'Bergräuber', 'bandit', 3.5], ['flyer', 'Steinadler', 'eagle', 2.5], ['ranged', 'Räuberschütze', 'banditarcher', 2.5]],
+      floor: ['#5d5a46', '#54523f'], wall: ['#4a4036', '#2f2822'], accent: '#e8c36a', light: 'rgba(255,220,150,', fog: '#8fb0d0',
+      amb: { sky: '#a9c2e0', ground: '#3a3a2a', key: '#fff0cc', bg: '#8fb0d0' }, mist: '#9db8d4',
+      decor: ['boulder', 'pine', 'grass', 'rubble', 'pebbles', 'boulder'], bridge: '#7a5a36' },
+    { name: 'Eisgrate', short: 'Eisgrate',
+      hpM: 65, dmgM: 6.2, xpM: 95.0,
+      mobs: [['swarm', 'Frostwolf', 'frostwolf', 3], ['grunt', 'Eiskrieger', 'frostwarrior', 3.5], ['ranged', 'Eismagier', 'icemage', 2.5], ['tank', 'Yeti', 'yeti', 2.5]],
+      floor: ['#7b8ca2', '#70829a'], wall: ['#5f7390', '#3e5068'], accent: '#9fe0ff', light: 'rgba(160,225,255,', fog: '#a8c6e6',
+      amb: { sky: '#bcd8ff', ground: '#2a3a4a', key: '#e0f0ff', bg: '#a8c6e6' }, mist: '#b4cde8',
+      decor: ['snow', 'snowpine', 'icespike', 'frost', 'snow', 'cairn'], bridge: '#6a5a4a' },
+    { name: 'Sturmkamm', short: 'Sturmkamm',
+      hpM: 90, dmgM: 7.6, xpM: 125.0,
+      mobs: [['flyer', 'Sturmharpyie', 'harpy', 3], ['grunt', 'Zwergenkrieger', 'dwarf', 3.5], ['ranged', 'Blitzschamane', 'stormshaman', 2.5], ['tank', 'Felsgolem', 'rockgolem', 2.5]],
+      floor: ['#54565f', '#4b4d57'], wall: ['#3a3c48', '#24262f'], accent: '#c9b8ff', light: 'rgba(200,185,255,', fog: '#585d78',
+      amb: { sky: '#8a8fb8', ground: '#22222c', key: '#c0b8ff', bg: '#5a5f7c' }, mist: '#646a88',
+      decor: ['boulder', 'deadtree', 'rubble', 'cairn', 'pebbles', 'boulder'], bridge: '#5a4632' },
+    { name: 'Kristallgipfel', short: 'Kristallgipfel',
+      hpM: 125, dmgM: 9.2, xpM: 165.0,
+      mobs: [['flyer', 'Kristallfalke', 'crystalfalcon', 3], ['grunt', 'Kristallwächter', 'crystalguard', 3.5], ['ranged', 'Kristallseher', 'crystalseer', 3], ['tank', 'Kristallgolem', 'crystalgolem', 2.5]],
+      floor: ['#4e6e7c', '#466674'], wall: ['#2c4a5e', '#1b3040'], accent: '#5ee8d0', light: 'rgba(100,240,210,', fog: '#6aa8b8',
+      amb: { sky: '#7fd0e0', ground: '#1a3038', key: '#c8fff4', bg: '#6aa8b8' }, mist: '#78b4c4',
+      decor: ['icespike', 'crystalpeak', 'frost', 'crystalpeak', 'pebbles', 'boulder'], bridge: '#6a6a72' },
+    { name: 'Himmelsthron', short: 'Himmelsthron',
+      hpM: 175, dmgM: 11.5, xpM: 220.0,
+      mobs: [['flyer', 'Wolkenfalke', 'cloudfalcon', 3.5], ['grunt', 'Himmelswächter', 'skyguard', 3.5], ['necro', 'Windweber', 'windweaver', 1.6], ['tank', 'Titan', 'titan', 2.5]],
+      floor: ['#8c8672', '#80806c'], wall: ['#6a6458', '#484238'], accent: '#ffd86a', light: 'rgba(255,225,130,', fog: '#e8d8b0',
+      amb: { sky: '#ffeec4', ground: '#3a3020', key: '#fff2c8', bg: '#e6d6ae' }, mist: '#f0e2bc',
+      decor: ['cairn', 'snowpine', 'rubble', 'icespike', 'snow', 'pebbles'], bridge: '#8a6a3a' },
+  ];
+  const PEAKS_BOSS = { name: 'Thrymgar, der Sturmriese', hp: 45000, dmg: 95, cd: 1.4, spd: 70, xp: 15000, r: 36, look: 'giant' };
+
+  // Gegnerarten mit besonderem Verhalten bzw. Darstellung
+  const FLYERS = new Set(['bat', 'cbat', 'imp', 'eagle', 'harpy', 'crystalfalcon', 'cloudfalcon']);
+  const ARROWERS = new Set(['archer', 'banditarcher']);
+  const CHARGERS = new Set(['golem', 'rockgolem', 'crystalgolem', 'titan']);
+
+  /* ------------------------------------------------------------ Welten */
+  // ZONES/BOSS zeigen immer auf die aktive Welt (setWorld ersetzt den Inhalt, alle Module halten dieselben Objekte)
+  const WORLDS = [
+    { id: 'dungeon', name: 'Das Untergrund-Verlies', roman: 'I', style: 'dungeon', zones: DUNGEON_ZONES, boss: DUNGEON_BOSS, minLevel: 1 },
+    { id: 'peaks', name: 'Das Zackengebirge', roman: 'II', style: 'peaks', zones: PEAKS_ZONES, boss: PEAKS_BOSS, minLevel: 40 },
+  ];
+  const ZONES = [], BOSS = {};
+  let activeWorld = 0;
+  function setWorld(i) {
+    activeWorld = Math.max(0, Math.min(WORLDS.length - 1, i | 0));
+    const w = WORLDS[activeWorld];
+    ZONES.length = 0; ZONES.push(...w.zones);
+    for (const k of Object.keys(BOSS)) delete BOSS[k];
+    Object.assign(BOSS, w.boss);
+    return w;
+  }
+  setWorld(0);
+
+  const NUM_ROOMS = DUNGEON_ZONES.length * BAL.roomsPerZone; // letzter Raum = Boss
 
   /** Anzahl Standardgegner in Raum i (0-basiert). */
   function roomEnemyCount(i) {
@@ -276,7 +335,7 @@
   }
 
   const api = {
-    TILE, CAM, BAL, xpNeed, GEAR, gearTier, gearNext, bodyTier, DIFFS, ARCH, ZONES, BOSS, NUM_ROOMS, roomEnemyCount, pickMob, enemyStats,
+    TILE, CAM, BAL, xpNeed, GEAR, gearTier, gearNext, bodyTier, DIFFS, ARCH, ZONES, BOSS, WORLDS, setWorld, get world() { return activeWorld; }, FLYERS, ARROWERS, CHARGERS, NUM_ROOMS, roomEnemyCount, pickMob, enemyStats,
     TIERS, RUNES, RUNE_BY_ID, runeValue, runeText, runeSlots, rollRuneTier,
     SPELLS, spellPower, spellUpCost, runeBonus, derive,
   };

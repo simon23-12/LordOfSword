@@ -22,7 +22,7 @@ const origRandom = Math.random;
 Math.random = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
 
 function freshSave(level) {
-  return { level, xp: 0, unspent: 0, pts: { atk: 0, def: 0, vit: 0, mag: 0 }, runes: [], equipped: [], bestRoom: 0, fires: [], startRoom: 0, difficulty: +(process.env.DIFF || 0),
+  return { level, xp: 0, unspent: 0, pts: { atk: 0, def: 0, vit: 0, mag: 0 }, runes: [], equipped: [], world: +(process.env.WORLD || 0), wd: [{ fires: [], startRoom: 0, bestRoom: 0, cleared: true }, { fires: [], startRoom: 0, bestRoom: 0, cleared: false }], difficulty: +(process.env.DIFF || 0),
     stats: { runs: 0, kills: 0, deaths: 0, clears: 0, time: 0, xp: 0, bossKills: 0 }, settings: {} };
 }
 function weights(level) { return level >= BAL.magicUnlockLevel ? { atk: .30, def: .20, vit: .30, mag: .20 } : { atk: .40, def: .20, vit: .40, mag: 0 }; }
@@ -42,11 +42,13 @@ function bot(R) {
   if (!tgt) for (const e of R.enemies) { if (e.dead || e.room !== R.room) continue; const d = Math.hypot(e.x - p.x, e.y - p.y); if (d < bd && R.map.los(p.x, p.y, e.x, e.y)) { bd = d; tgt = e; } }
   if (tgt) { p.target = bd > 45 ? { x: tgt.x, y: tgt.y } : null; }
   else {
-    const cur = R.room, a = R.map.rooms[cur], b = R.map.rooms[Math.min(R.map.rooms.length - 1, cur + 1)];
-    R.botStage = R.botStage || {};
-    const corner = { x: (b.cx + .5) * T, y: (a.cy + .5) * T };
-    if (Math.hypot(p.x - corner.x, p.y - corner.y) < 30) R.botStage[cur] = 1;
-    p.target = R.botStage[cur] ? { x: (b.cx + .5) * T, y: (b.cy + .5) * T } : corner;
+    // Weg zum nächsten Raum über das Flussfeld (Hindernisse wie Felsnadeln werden umgangen)
+    const cur = R.room, nb = R.map.rooms[Math.min(R.map.rooms.length - 1, cur + 1)];
+    const dest = { x: (nb.cx + .5) * T, y: (nb.cy + .5) * T };
+    R.botFlow = R.botFlow || Dungeon.makeFlow(R.map);
+    Dungeon.updateFlow(R.map, R.botFlow, dest.x, dest.y, 4000);
+    const dir = Dungeon.flowDir(R.map, R.botFlow, p.x, p.y);
+    p.target = dir ? { x: p.x + dir.x * 50, y: p.y + dir.y * 50 } : dest;
   }
   Input.wx = tgt ? tgt.x : p.x; Input.wy = tgt ? tgt.y : p.y;
   // Schwertangriff ist jetzt manuell (Taste): der Bot schlägt zu, sobald ein Gegner in Reichweite ist
