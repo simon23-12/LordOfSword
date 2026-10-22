@@ -85,14 +85,13 @@ const App = (function () {
   function renderRunes() {
     const sv = Save.data, el = $('runes-box');
     if (sv.level < BAL.runeUnlockLevel) {
-      el.innerHTML = `<h3>Runen</h3><div class="locked-box">Uralte Runen schlummern in den Tiefen des Verlieses.<br><br>Ab <b>Level ${BAL.runeUnlockLevel}</b> kannst du sie finden und einsetzen.<br><br><span class="note">Noch ${BAL.runeUnlockLevel - sv.level} Level.<br>Weitere Runenplätze: Level ${BAL.runeSlotLevels.slice(1).join(', ')}.</span></div>`;
+      el.innerHTML = `<h3>Runen</h3><div class="locked-box">Uralte Runen schlummern in den Tiefen des Verlieses.<br><br>Ab <b>Level ${BAL.runeUnlockLevel}</b> kannst du sie finden und einsetzen.<br><br><span class="note">Noch ${BAL.runeUnlockLevel - sv.level} Level.</span></div>`;
       return;
     }
     const slots = LOS.runeSlots(sv.level);
     let sl = '';
-    for (let i = 0; i < BAL.runeSlotLevels.length; i++) {
-      if (i >= slots) sl += `<div class="rune locked" data-tip="${esc('<b>Gesperrt</b>Wird auf Level ' + BAL.runeSlotLevels[i] + ' frei.')}">Level<br>${BAL.runeSlotLevels[i]}</div>`;
-      else if (sv.equipped[i]) sl += `<div data-act="unequip" data-i="${i}">${runeHtml(sv.equipped[i])}</div>`;
+    for (let i = 0; i < slots; i++) { // nur freigeschaltete Plätze zeigen
+      if (sv.equipped[i]) sl += `<div data-act="unequip" data-i="${i}">${runeHtml(sv.equipped[i])}</div>`;
       else sl += `<div class="rune empty">leer</div>`;
     }
     sv.runes.sort((a, b) => b.tier - a.tier || a.id.localeCompare(b.id));

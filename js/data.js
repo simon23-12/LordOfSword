@@ -45,7 +45,7 @@
     // Essenz (Mana-XP): Währung für Zauber-Verbesserungen. Wert je Kugel = (Zone + 1) × Schwierigkeitsfaktor
     essenceChance: 0.015, essenceEliteChance: 0.375, essenceBoss: 5, essenceBossTotal: 6.25,
     spellUpCostGrow: 1.7,
-    runeChance: 0.012, runeChanceElite: 0.35,
+    runeChance: 0.002, runeChanceElite: 0.058,
     eliteChance: 0.07,
     roomsPerZone: 3,
     dungeonSeed: 20240611, // fester Wert = immer dasselbe Verlies mit denselben Gegnern; 0 = zufällig
