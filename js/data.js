@@ -22,6 +22,7 @@
 
     dmgBase: 9.1, dmgGrow: 1.26,
     hpBase: 100, hpGrow: 1.24, hpLinear: 6,
+    hpGainMul: 0.5,        // Faktor auf den Lebenszuwachs über die Basis (1. Punkt: +15 statt +30)
     attackInterval: 0.62,  // Sekunden zwischen zwei Hieben; sinkt langsam mit Angriffspunkten
     aspdPerPt: 0.006, aspdPtMax: 0.5, // +0,6 % Angriffstempo pro Angriffspunkt (max. +50 %)
     armorBase: 4, armorGrow: 1.22, armorK: 100, maxReduction: 0.8,
@@ -244,7 +245,8 @@
     const armor = BAL.armorBase * grow(BAL.armorGrow, pts.def);
     const red = Math.min(BAL.maxReduction, armor / (armor + BAL.armorK));
     const dr = Math.min(0.9, 1 - (1 - red) * (1 - rb.dr / 100));
-    const hp = (BAL.hpBase * grow(BAL.hpGrow, pts.vit) + BAL.hpLinear * pts.vit) * (1 + rb.hp / 100);
+    const hpRaw = BAL.hpBase * grow(BAL.hpGrow, pts.vit) + BAL.hpLinear * pts.vit;
+    const hp = (BAL.hpBase + (hpRaw - BAL.hpBase) * BAL.hpGainMul) * (1 + rb.hp / 100);
     const mag = pts.mag;
     const sprint = level >= BAL.sprintUnlockLevel ? {
       dur: Math.min(BAL.sprintDurMax, BAL.sprintDur + BAL.sprintDurPerPt * pts.atk),
