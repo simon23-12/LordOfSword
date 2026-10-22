@@ -36,8 +36,8 @@
     // Schild (Taste Q / K halten): Teil des Verteidigungs-Werts
     shieldUnlockLevel: 5, reflectPerPt: 0.03, reflectMax: 0.5, // Reflexion beim Blocken/Parieren: +3 % je Verteidigungspunkt (max. 50 %)
     blockBase: 0.5, blockMax: 0.9, blockHalf: 25, blockMove: 0.5, parryWindow: 0.18,
-    // Blockwinkel (Block, Parade und Reflexion): beim Freischalten 180° (Blickrichtung), wächst mit dem Level, ab blockFullLevel Rundumblock (360°)
-    blockArcStart: 180, blockFullLevel: 60,
+    // Blockwinkel (Block, Parade und Reflexion): 180° (Blickrichtung) ohne Verteidigungspunkte, +3° je Verteidigungspunkt, ab 60 Punkten Rundumblock (360°)
+    blockArcStart: 180, blockArcPerPt: 3,
     // Optik: Kämpfer wird alle 10 Level aufgewertet; Schwert/Schild je nach Angriffs-/Verteidigungspunkten
     bodyTierEvery: 10,
     gearPts: [0, 5, 12, 22, 35, 52],
@@ -259,7 +259,7 @@
     const block = level >= BAL.shieldUnlockLevel ? {
       red: Math.min(BAL.blockMax, BAL.blockBase + (BAL.blockMax - BAL.blockBase) * pts.def / (pts.def + BAL.blockHalf)),
       move: BAL.blockMove, parry: BAL.parryWindow, reflect: Math.min(BAL.reflectMax, BAL.reflectPerPt * pts.def),
-      arc: Math.min(360, BAL.blockArcStart + (level - BAL.shieldUnlockLevel) * (360 - BAL.blockArcStart) / (BAL.blockFullLevel - BAL.shieldUnlockLevel)), // Grad
+      arc: Math.min(360, BAL.blockArcStart + BAL.blockArcPerPt * pts.def), // Grad
     } : null;
     const maxMana = mag > 0 ? 30 + 5 * mag : 0;
     const manaRegen = mag > 0 ? (2 + 0.35 * mag) * (1 + rb.arcane / 100) * BAL.manaRegenMul : 0;

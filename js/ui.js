@@ -45,7 +45,7 @@ const App = (function () {
       : '');
     const blk = S.block, nblk = nD.block;
     const defEff = `Schadensreduktion ${f1(S.dr * 100)}% <em>→ ${f1(nD.dr * 100)}%</em>` + (blk
-      ? `<br>Schild blockt ${f0(blk.red * 100)}% <em>→ ${f0(nblk.red * 100)}%</em> · Blockwinkel ${f0(blk.arc)}° · Reflexion ${f0(blk.reflect * 100)}% <em>→ ${f0(nblk.reflect * 100)}%</em>`
+      ? `<br>Schild blockt ${f0(blk.red * 100)}% <em>→ ${f0(nblk.red * 100)}%</em><br>Blockwinkel ${f0(blk.arc)}° <em>→ ${f0(nblk.arc)}°</em> · Reflexion ${f0(blk.reflect * 100)}% <em>→ ${f0(nblk.reflect * 100)}%</em>`
       : '');
     const stats = `
       ${mk('atk', 'Angriff', atkEff)}
@@ -254,7 +254,7 @@ const App = (function () {
     $('help-box').innerHTML = `<b>Steuerung</b><br>
       Bewegen: ${k(L('up'))} ${k(L('left'))} ${k(L('down'))} ${k(L('right'))} (relativ zum Bildschirm) · ${k(L('moveto'))}: zum Mauszeiger laufen (halten = weiterlaufen)<br>
       <b>Schwert:</b> ${k(L('attack'))} – immer Richtung Mauszeiger (halten = weiter schlagen)<br>
-      ${lvl >= BAL.shieldUnlockLevel ? `<b>Schild:</b> ${k(L('block'))} halten – blockt Angriffe aus Blickrichtung (der Blockwinkel wächst mit dem Level), ein Block im allerletzten Moment pariert ganz<br>` : ''}
+      ${lvl >= BAL.shieldUnlockLevel ? `<b>Schild:</b> ${k(L('block'))} halten – blockt Angriffe aus Blickrichtung (der Blockwinkel wächst mit den Verteidigungspunkten), ein Block im allerletzten Moment pariert ganz<br>` : ''}
       ${lvl >= BAL.sprintUnlockLevel ? `<b>Sprint:</b> ${k(L('sprint'))} halten beim Laufen – lange Abklingzeit, mit Angriffspunkten besser<br>` : ''}
       ${lvl >= BAL.magicUnlockLevel ? `<b>Zauber:</b> ${[1, 2, 3, 4, 5].map(i => k(L('spell' + i))).join(' ')} zum Mauszeiger<br>` : ''}
       <b>Feuerstelle</b> (letzter Raum jeder Zone): ${k(L('interact'))} neben ihr, sobald der Raum gesäubert ist – die nächste Zone wird dein Startpunkt<br>

@@ -200,7 +200,7 @@ const Game = (function () {
     if (got >= 1 && !quiet) addText(p.x, p.y, 44, '+' + Math.round(got), '#6fe27a', 15);
   }
 
-  /** Trifft ein Angriff aus Richtung (fx,fy) den Schild? (Blockwinkel wächst mit dem Level: 180° bis 360°) */
+  /** Trifft ein Angriff aus Richtung (fx,fy) den Schild? (Blockwinkel wächst mit den Verteidigungspunkten: 180° bis 360°) */
   function blockedFrom(fx, fy) {
     const p = R.p;
     if (!p.blocking || !R.S.block) return false;
