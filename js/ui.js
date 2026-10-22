@@ -133,10 +133,11 @@ const App = (function () {
 
   function renderStart() {
     const sv = Save.data;
-    $('seg-diff').innerHTML = LOS.DIFFS.map((d, i) => `<button data-act="diff" data-i="${i}" class="${sv.difficulty === i ? 'on' : ''}" ${i > sv.diffUnlocked ? 'disabled' : ''} data-tip="${esc(i > sv.diffUnlocked ? '<b>Gesperrt</b>Besiege Malgorath auf ' + LOS.DIFFS[i - 1].name + '.' : `<b>${d.name}</b>Gegner ×${d.hp} Leben, ×${d.dmg} Schaden<br>Erfahrung ×${d.xp}, bessere Runen`)}">${d.name}</button>`).join('');
-    if (sv.startZone > sv.zoneUnlock) sv.startZone = sv.zoneUnlock;
-    $('seg-zone').innerHTML = ZONES.map((z, i) => `<button data-act="zone" data-i="${i}" class="${sv.startZone === i ? 'on' : ''}" ${i > sv.zoneUnlock ? 'disabled' : ''} data-tip="${esc(i > sv.zoneUnlock ? '<b>Gesperrt</b>Säubere zuerst alle drei Räume von ' + ZONES[i - 1].name + '.' : `<b>${z.name}</b>Raum ${i * BAL.roomsPerZone + 1} von ${LOS.NUM_ROOMS}`)}">${['I', 'II', 'III', 'IV', 'V'][i]}</button>`).join('');
-    $('start-hint').textContent = sv.startZone > 0 ? `Du beginnst in: ${ZONES[sv.startZone].name}` : sv.unspent > 0 ? `Du hast ${sv.unspent} unverteilte Statuspunkte!` : 'Tipp: Je tiefer du kommst, desto mehr XP bringen die Gegner.';
+    $('seg-diff').innerHTML = LOS.DIFFS.map((d, i) => `<button data-act="diff" data-i="${i}" class="${sv.difficulty === i ? 'on' : ''}" data-tip="${esc(`<b>${d.name}</b>Gegner ×${d.hp} Leben, ×${d.dmg} Schaden<br>Erfahrung ×${d.xp}, bessere Runen, mehr Essenz`)}">${d.name}</button>`).join('');
+    // Startpunkt: Eingang oder eine entzündete Feuerstelle
+    const spots = [0, ...sv.fires], cur = spots.includes(sv.startRoom) ? sv.startRoom : 0, zone = ZONES[Math.floor(cur / BAL.roomsPerZone)];
+    $('seg-start').innerHTML = `<button data-act="start-prev" ${spots.length < 2 ? 'disabled' : ''}>◀</button><span class="start-name" data-tip="${esc(`<b>${cur ? 'Feuerstelle' : 'Eingang'}</b>${zone.name} · Raum ${cur + 1} von ${LOS.NUM_ROOMS}`)}">${cur ? 'Feuer · ' : 'Eingang · '}Raum ${cur + 1}</span><button data-act="start-next" ${spots.length < 2 ? 'disabled' : ''}>▶</button>`;
+    $('start-hint').textContent = cur > 0 ? `Du beginnst an der Feuerstelle: ${zone.name}` : sv.unspent > 0 ? `Du hast ${sv.unspent} unverteilte Statuspunkte!` : 'Tipp: Entzünde im Verlies Feuerstellen – dort kannst du neu starten.';
     const st = sv.stats;
     $('camp-info').innerHTML = `Rekord: Raum ${sv.bestRoom + 1} von ${LOS.NUM_ROOMS}<br>${st.runs} Versuche · ${st.deaths} gefallen · ${st.clears} Siege · ${f0(st.kills)} Gegner besiegt`;
   }
@@ -217,10 +218,11 @@ const App = (function () {
 
   function toTitle() {
     A.mode = 'title'; Game.clear(); hideAll(); show('title', true);
+    A.settingsOpen = false; $('btn-abandon').classList.remove('hidden'); $('btn-resume').textContent = 'Weiter';
     $('btn-continue').disabled = !Save.exists;
     Sound.play('camp');
   }
-  function hideAll() { for (const id of ['title', 'camp', 'pause', 'end']) show(id, false); hideTip(); }
+  function hideAll() { for (const id of ['title', 'camp', 'pause', 'keys', 'end']) show(id, false); A.keysOpen = false; Keys.cancelCapture(); hideTip(); }
 
   function toCamp() {
     A.mode = 'camp'; A.paused = false; Game.clear(); hideAll(); show('camp', true);
@@ -244,8 +246,38 @@ const App = (function () {
     if (on) { $('vol-music').value = Sound.vol.music * 100; $('vol-sfx').value = Sound.vol.sfx * 100; }
   }
 
+  /** Steuerungshilfe passend zur aktuellen Tastenbelegung */
+  function renderHelp() {
+    const L = Keys.labelFor, k = t => `<kbd>${esc(t)}</kbd>`;
+    $('help-box').innerHTML = `<b>Steuerung</b><br>
+      Bewegen: ${k(L('up'))} ${k(L('left'))} ${k(L('down'))} ${k(L('right'))} (relativ zum Bildschirm) · ${k('rechte Maustaste')}: hinlaufen (halten = weiterlaufen)<br>
+      <b>Schwert:</b> ${k('linke Maustaste')} oder ${k(L('attack'))} – immer Richtung Mauszeiger (halten = weiter schlagen)<br>
+      <b>Schild</b> (ab Stufe ${BAL.shieldUnlockLevel}): ${k(L('block'))} halten – blockt Angriffe von vorn, ein Block im allerletzten Moment pariert ganz<br>
+      <b>Sprint</b> (ab Stufe ${BAL.sprintUnlockLevel}): ${k(L('sprint'))} halten beim Laufen – lange Abklingzeit, mit Angriffspunkten besser<br>
+      <b>Zauber</b> (ab Stufe ${BAL.magicUnlockLevel}): ${[1, 2, 3, 4, 5].map(i => k(L('spell' + i))).join(' ')} zum Mauszeiger<br>
+      <b>Feuerstelle:</b> ${k(L('interact'))} neben ihr, sobald der Raum gesäubert ist – sie wird dein Startpunkt<br>
+      ${k('Esc')} Pause · ${k(L('mute'))} Ton an/aus · ${k(L('fullscreen'))} Vollbild<br>
+      Rote Kugeln heilen, blaue geben Mana, violette Kristalle (Essenz) verbessern Zauber.`;
+  }
+
+  /* ------------------------------------------------------------ Tastenbelegung */
+  function renderKeys(msg) {
+    $('keys-list').innerHTML = Keys.ACTIONS.map(a => {
+      const s = Keys.slots(a.id);
+      const btns = [0, 1].map(i => {
+        const on = A.listen && A.listen.id === a.id && A.listen.slot === i;
+        return `<button class="kb ${s[i] ? '' : 'empty'} ${on ? 'listen' : ''}" data-kid="${a.id}" data-kslot="${i}">${on ? 'Taste …' : esc(Keys.label(s[i]))}</button>`;
+      }).join('');
+      return `<div class="keys-row"><span>${a.name}</span>${btns}</div>`;
+    }).join('');
+    $('keys-msg').textContent = msg || '';
+  }
+  function openKeys() { A.keysOpen = true; A.listen = null; show('keys', true); renderKeys(); }
+  function closeKeys() { Keys.cancelCapture(); A.listen = null; A.keysOpen = false; show('keys', false); renderHelp(); }
+
   function openSettings() {
-    $('pause-title').textContent = 'Ton & Hilfe';
+    renderHelp();
+    $('pause-title').textContent = 'Einstellungen';
     $('btn-abandon').classList.add('hidden');
     $('btn-resume').textContent = 'Schließen';
     $('vol-music').value = Sound.vol.music * 100; $('vol-sfx').value = Sound.vol.sfx * 100;
@@ -265,7 +297,7 @@ const App = (function () {
     const levelTxt = sum.lvEnd > sum.lvStart ? `<div class="good"><span>Stufenaufstieg</span><b>${sum.lvStart} → ${sum.lvEnd}</b></div>` : `<div><span>Stufe</span><b>${sum.lvEnd}</b></div>`;
     const runes = sum.runes.map(r => runeHtml(r)).join('');
     let note;
-    if (sum.won) note = `Malgorath, der Knochenfürst, ist gefallen! Doch die Tiefe birgt noch mehr …${sum.unlockedDiff ? `<br><b style="color:#ffe08a">Neue Schwierigkeit freigeschaltet: ${LOS.DIFFS[sum.unlockedDiff].name}</b>` : ''}`;
+    if (sum.won) note = `Malgorath, der Knochenfürst, ist gefallen! Doch die Tiefe birgt noch mehr …`;
     else if (sum.quit) note = 'Du hast dich zurückgezogen.';
     else if (sum.newBest) note = `Neuer Rekord – du bist bis Raum ${sum.room} vorgedrungen!`;
     else note = sum.room <= 2 ? 'Das Verlies ist gnadenlos. Aber jeder Tod macht dich stärker.' : 'Die Tiefe fordert ihren Tribut. Verteile deine Punkte und versuche es erneut.';
@@ -314,7 +346,11 @@ const App = (function () {
         case 'fuse': fuse(); break;
         case 'discard': discard(); break;
         case 'diff': sv.difficulty = +t.dataset.i; Save.write(); Sound.sfx('click'); renderStart(); break;
-        case 'zone': sv.startZone = +t.dataset.i; Save.write(); Sound.sfx('click'); renderStart(); break;
+        case 'start-prev': case 'start-next': {
+          const spots = [0, ...sv.fires]; let i = Math.max(0, spots.indexOf(sv.startRoom));
+          i = (i + (act === 'start-next' ? 1 : -1) + spots.length) % spots.length;
+          sv.startRoom = spots[i]; Save.write(); Sound.sfx('click'); renderStart(); break;
+        }
       }
     });
     // Tooltips
@@ -332,6 +368,25 @@ const App = (function () {
       Save.wipe(); Save.create(); toCamp();
     };
     $('btn-settings').onclick = () => { Sound.sfx('click'); openSettings(); };
+    $('btn-settings-title').onclick = () => { Sound.init(); Sound.sfx('click'); openSettings(); };
+    for (const id of ['btn-fs-title', 'btn-fs-camp', 'btn-fs-pause']) $(id).onclick = () => { Sound.init(); Keys.toggleFullscreen(); };
+    $('btn-keys').onclick = () => { Sound.sfx('click'); openKeys(); };
+    $('btn-keys-done').onclick = () => { Sound.sfx('click'); closeKeys(); };
+    $('btn-keys-reset').onclick = () => { Keys.reset(); Keys.cancelCapture(); A.listen = null; renderKeys('Standardbelegung wiederhergestellt.'); };
+    $('keys').addEventListener('click', ev => {
+      const b = ev.target.closest('[data-kid]'); if (!b) return;
+      const id = b.dataset.kid, slot = +b.dataset.kslot;
+      A.listen = { id, slot }; renderKeys();
+      Keys.capture(code => {
+        A.listen = null;
+        let msg = '';
+        if (code !== null) {
+          const stolen = Keys.set(id, slot, code);
+          if (stolen) msg = `„${Keys.label(code)}“ war bei „${stolen}“ belegt und wurde dort entfernt.`;
+        }
+        renderKeys(msg);
+      });
+    });
     $('btn-resume').onclick = () => { Sound.sfx('click'); if (A.settingsOpen) closeSettings(); else setPause(false); };
     $('btn-abandon').onclick = () => { setPause(false); Game.abandon(); };
     $('vol-music').oninput = e => { Sound.setMusicVol(e.target.value / 100); Save.data.settings.music = e.target.value / 100; Save.write(); };
@@ -367,10 +422,10 @@ const App = (function () {
     add('Stufe 40', () => { const sv = Save.data; while (sv.level < 40) { sv.level++; sv.unspent++; } });
     add('5 Runen', () => { for (let i = 0; i < 5; i++) Save.data.runes.push({ id: LOS.RUNES[Math.floor(Math.random() * LOS.RUNES.length)].id, tier: Math.floor(Math.random() * 3) }); });
     add('+200 Essenz', () => { Save.data.essence += 200; });
-    add('Alles frei', () => { Save.data.zoneUnlock = 4; Save.data.diffUnlocked = 2; });
+    add('Alle Feuer', () => { Save.data.fires = Array.from({ length: LOS.NUM_ROOMS - 2 }, (_, i) => i + 1); });
     add('Reset', () => { Save.wipe(); Save.create(); });
   }
 
-  Object.assign(A, { init, toTitle, toCamp, startRun, setPause, closeSettings, showEnd, renderCamp, hideTip });
+  Object.assign(A, { init, toTitle, toCamp, startRun, setPause, closeSettings, closeKeys, showEnd, renderCamp, hideTip });
   return A;
 })();

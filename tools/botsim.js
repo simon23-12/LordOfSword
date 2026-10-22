@@ -10,11 +10,11 @@ const fs = require('fs'), path = require('path'), vm = require('vm');
 const root = path.join(__dirname, '..');
 global.LOS = require(path.join(root, 'js/data.js'));
 global.Sound = { play() {}, sfx() {}, setIntensity() {}, setZone() {}, init() {} };
-global.Input = { keys: {}, mx: 640, my: 360, wx: 0, wy: 0, down: false, rdown: false, hover: null, spellQueue: [] };
+global.Input = { keys: {}, mx: 640, my: 360, wx: 0, wy: 0, down: false, rdown: false, interact: false, hover: null, spellQueue: [] };
 global.Save = {
   data: null, write() {},
 };
-for (const f of ['dungeon.js', 'game.js']) vm.runInThisContext(fs.readFileSync(path.join(root, 'js', f), 'utf8') + '\n;globalThis.' + (f === 'game.js' ? 'Game=Game' : 'Dungeon=Dungeon'), { filename: f });
+for (const f of ['keys.js', 'dungeon.js', 'game.js']) vm.runInThisContext(fs.readFileSync(path.join(root, 'js', f), 'utf8') + '\n;globalThis.' + (f === 'game.js' ? 'Game=Game' : f === 'keys.js' ? 'Keys=Keys' : 'Dungeon=Dungeon'), { filename: f });
 
 const T = LOS.TILE, BAL = LOS.BAL;
 let seed = 7;
@@ -22,7 +22,7 @@ const origRandom = Math.random;
 Math.random = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
 
 function freshSave(level) {
-  return { level, xp: 0, unspent: 0, pts: { atk: 0, def: 0, vit: 0, mag: 0 }, runes: [], equipped: [], bestRoom: 0, zoneUnlock: 0, diffUnlocked: 0, difficulty: +(process.env.DIFF || 0), startZone: 0,
+  return { level, xp: 0, unspent: 0, pts: { atk: 0, def: 0, vit: 0, mag: 0 }, runes: [], equipped: [], bestRoom: 0, fires: [], startRoom: 0, difficulty: +(process.env.DIFF || 0),
     stats: { runs: 0, kills: 0, deaths: 0, clears: 0, time: 0, xp: 0, bossKills: 0 }, settings: {} };
 }
 function weights(level) { return level >= BAL.magicUnlockLevel ? { atk: .30, def: .20, vit: .30, mag: .20 } : { atk: .40, def: .20, vit: .40, mag: 0 }; }

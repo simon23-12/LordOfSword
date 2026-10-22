@@ -24,18 +24,19 @@ const Game = (function () {
   function startRun() {
     const sv = Save.data;
     const diff = sv.difficulty;
-    const startZone = Math.min(sv.startZone, sv.zoneUnlock);
+    const fires = sv.fires || [];
+    const startRoom = fires.includes(sv.startRoom | 0) ? sv.startRoom | 0 : 0; // 0 = Eingang, sonst Raum mit entzündeter Feuerstelle
     const map = Dungeon.generate(BAL.dungeonSeed);
     const slots = LOS.runeSlots(sv.level);
     const runes = sv.equipped.slice(0, slots).filter(Boolean);
     const S = LOS.derive(sv.level, sv.pts, runes);
-    const startRoom = startZone * BAL.roomsPerZone;
     const sr = map.rooms[startRoom];
     R = {
       map, flow: Dungeon.makeFlow(map), S, diff, startRoom, runes,
-      p: { x: sr.cx * T + T / 2, y: sr.cy * T + T / 2, r: 10, hp: S.maxHp, mana: S.maxMana, face: 0, swingT: -1, swingDur: 0.26, swingDir: 0, swingSide: 1, hitDone: true,
+      p: { x: sr.cx * T + T / 2, y: sr.cy * T + (startRoom > 0 ? T * 1.5 : T / 2), r: 10, hp: S.maxHp, mana: S.maxMana, face: 0, swingT: -1, swingDur: 0.26, swingDir: 0, swingSide: 1, hitDone: true,
         atkCd: 0, target: null, anim: 0, moving: false, hurtT: 0, castT: 0, lastHurt: -99, regenAcc: 0, dead: false,
         lunge: 0, sprintT: 0, sprintCd: 0, sprintUsed: 0, sprinting: false, blocking: false, blockT: 0, blockFlash: 0, parryFlash: 0, dust: 0 },
+      fires: map.props.filter(pr => pr.type === 'bonfire'), prompt: null,
       enemies: [], eproj: [], pproj: [], fx: [], tele: [], timers: [], parts: [], texts: [], pickups: [],
       cam: { x: 0, y: 0, shake: 0 },
       up: Object.assign({}, sv.spellUp), essGained: 0,
@@ -45,8 +46,9 @@ const Game = (function () {
       flash: 0, lastTile: -1, kill: 0, hint: 0, orbsTaken: 0, hitstop: 0,
     };
     R.cam.x = R.p.x; R.cam.y = R.p.y;
+    for (const pr of R.fires) { pr.lit = fires.includes(pr.room); pr.light.off = !pr.lit; }
     for (const room of map.rooms) {
-      if (room.i < startRoom) { room.cleared = true; continue; }
+      if (room.i < startRoom || (room.i === startRoom && startRoom > 0)) { room.cleared = true; continue; } // Feuerstellen-Raum ist schon gesäubert
       withSeed(BAL.dungeonSeed + room.i * 7919, () => spawnRoom(room)); // jeder Raum hat immer die gleichen Gegner
     }
     R.sel = Math.max(0, LOS.SPELLS.filter(s => sv.pts.mag >= s.unlock).length - 1);
@@ -275,17 +277,17 @@ const Game = (function () {
     if (p.dead) return;
     const wx = Input.wx, wy = Input.wy;
     const aimA = Math.atan2(wy - p.y, wx - p.x);
-    const atkKey = !!(K['Space'] || K['KeyJ'] || Input.down); // Leertaste / J / linke Maustaste: Hieb Richtung Mauszeiger
+    const atkKey = Keys.down('attack') || Input.down; // Leertaste / J / linke Maustaste: Hieb Richtung Mauszeiger
 
     // --- Schild (Q / K halten)
-    if (S.block && (K['KeyQ'] || K['KeyK']) && (p.blocking || p.swingT < 0)) {
+    if (S.block && Keys.down('block') && (p.blocking || p.swingT < 0)) {
       if (!p.blocking) { p.blocking = true; p.blockT = 0; p.target = null; if (p.sprinting) endSprint(); Sound.sfx('shield', 0.1); }
       p.blockT += dt;
     } else p.blocking = false;
 
     // --- Bewegung: WASD relativ zum Bildschirm (isometrisch), rechte Maustaste = hinlaufen (halten = weiterlaufen)
-    const up = (K['KeyW'] || K['ArrowUp'] ? 1 : 0) - (K['KeyS'] || K['ArrowDown'] ? 1 : 0);
-    const rt = (K['KeyD'] || K['ArrowRight'] ? 1 : 0) - (K['KeyA'] || K['ArrowLeft'] ? 1 : 0);
+    const up = (Keys.down('up') ? 1 : 0) - (Keys.down('down') ? 1 : 0);
+    const rt = (Keys.down('right') ? 1 : 0) - (Keys.down('left') ? 1 : 0);
     let mx = -CY * up + SY * rt, my = -SY * up - CY * rt;
     const keyMove = !!(up || rt);
     if (keyMove || p.blocking) p.target = null;
@@ -300,7 +302,7 @@ const Game = (function () {
 
     // --- Sprint (Shift, ab Stufe 10)
     if (S.sprint) {
-      const shift = K['ShiftLeft'] || K['ShiftRight'];
+      const shift = Keys.down('sprint');
       if (p.sprinting) {
         p.sprintT -= dt; p.sprintUsed += dt;
         if (p.sprintT <= 0 || !shift || p.blocking || !p.moving) endSprint();
@@ -354,10 +356,31 @@ const Game = (function () {
     for (const k of Input.spellQueue) if (k >= 0) castSpell(k);
     Input.spellQueue.length = 0;
     for (let i = 0; i < 5; i++) R.cd[i] = Math.max(0, R.cd[i] - dt);
+    // --- Feuerstellen: nach dem Säubern des Raums entzündbar
+    R.prompt = null;
+    for (const pr of R.fires) {
+      if (pr.lit || (pr.x - p.x) * (pr.x - p.x) + (pr.y - p.y) * (pr.y - p.y) > 80 * 80) continue;
+      if (!R.map.rooms[pr.room].cleared) R.prompt = 'Besiege zuerst alle Gegner im Raum';
+      else { R.prompt = `[${Keys.labelFor('interact')}] Feuerstelle entzünden`; if (Input.interact) lightFire(pr); }
+    }
+    Input.interact = false;
     if (p.slowT > 0) p.slowT -= dt;
     markExplored();
     const ri = map.roomAt[Math.floor(p.y / T) * map.w + Math.floor(p.x / T)];
     if (ri >= 0 && ri !== R.room) enterRoom(ri);
+  }
+
+  function lightFire(pr) {
+    const sv = Save.data, p = R.p;
+    pr.lit = true; pr.light.off = false;
+    if (!sv.fires.includes(pr.room)) sv.fires.push(pr.room);
+    sv.fires.sort((a, b) => a - b);
+    sv.startRoom = pr.room; // die zuletzt entzündete Feuerstelle ist der neue Startpunkt (im Lager änderbar)
+    Save.write();
+    banner('Feuerstelle entzündet', `Raum ${pr.room + 1} ist jetzt dein Startpunkt`, '#ffb060');
+    Sound.sfx('unlock'); shake(3);
+    burst(pr.x, pr.y, '#ffb060', 30, 220, 0.9, 3, -0.1, 14, true);
+    addText(p.x, p.y, 70, 'Feuerstelle entzündet', '#ffb060', 20, 1.8);
   }
 
   function swordHit() {
@@ -372,7 +395,7 @@ const Game = (function () {
       const crit = Math.random() < S.critCh;
       let dmg = S.dmg * rr(0.9, 1.1) * (crit ? S.critMul : 1);
       const nx = dx / (d || 1), ny = dy / (d || 1);
-      const dealt = damageEnemy(e, dmg, { crit, kb: { x: nx, y: ny, f: e.boss ? 0 : 90 } });
+      const dealt = damageEnemy(e, dmg, { crit, kb: { x: nx, y: ny, f: e.boss ? 0 : S.knock } });
       hits++; if (crit) crits++;
       burst(e.x - nx * e.r, e.y - ny * e.r, crit ? '#ffe27a' : '#ffe9c4', crit ? 16 : 7, 250, 0.32, 2.2, 1, 24, true);
       if (S.rb.steal > 0) healPlayer(dealt * S.rb.steal / 100, true);
@@ -458,14 +481,9 @@ const Game = (function () {
       addText(p.x, p.y, 70, 'Raum gesäubert', '#e8c97a', 20, 1.6);
       dropPickup('hp', room.cx * T + T / 2, room.cy * T + T / 2);
     }
-    // Nächste Startzone freischalten, wenn eine Zone komplett gesäubert ist
-    if ((room.i + 1) % BAL.roomsPerZone === 0 && room.zone < ZONES.length - 1) {
-      const sv = Save.data;
-      if (sv.zoneUnlock < room.zone + 1) {
-        sv.zoneUnlock = room.zone + 1; Save.write();
-        banner('Neuer Startpunkt', `${ZONES[room.zone + 1].name} ist jetzt im Lager anwählbar`, '#9bd77a');
-        Sound.sfx('unlock');
-      }
+    if (!room.boss && room.i !== 0 && !R.over) {
+      const pr = R.fires.find(f => f.room === room.i);
+      if (pr && !pr.lit) { banner('Feuerstelle bereit', `Entzünde sie mit [${Keys.labelFor('interact')}], um hier neu zu starten`, '#ffb060'); Sound.sfx('unlock'); }
     }
   }
 
@@ -527,8 +545,8 @@ const Game = (function () {
     if (sv.level === BAL.magicUnlockLevel) sub = 'Die Magie erwacht! Zauberpunkte sind nun im Lager verfügbar.';
     else if (sv.level === BAL.runeUnlockLevel) sub = 'Runen können nun gefunden und eingesetzt werden!';
     else if (BAL.runeSlotLevels.includes(sv.level)) sub = 'Ein neuer Runenplatz wurde freigeschaltet!';
-    else if (sv.level === BAL.shieldUnlockLevel) sub = 'Schild freigeschaltet! Halte Q oder K zum Blocken.';
-    if (sv.level === BAL.sprintUnlockLevel) sub = 'Sprint freigeschaltet! Halte Shift beim Laufen.';
+    else if (sv.level === BAL.shieldUnlockLevel) sub = `Schild freigeschaltet! Halte ${Keys.labelFor('block')} zum Blocken.`;
+    if (sv.level === BAL.sprintUnlockLevel) sub = (sub ? sub + ' · ' : '') + `Sprint freigeschaltet! Halte ${Keys.labelFor('sprint')} beim Laufen.`;
     if (bodyUp) {
       sub += ` · Neue Rüstung: ${LOS.GEAR.body[LOS.bodyTier(sv.level)]}`;
       R.fx.push({ k: 'ring', x: p.x, y: p.y, z: 30, r0: 10, r1: 120, t: 0, dur: 1.1, color: '#fff2c0' });
@@ -1075,7 +1093,6 @@ const Game = (function () {
       Sound.play('none'); Sound.sfx('stinger_death');
     } else {
       sv.stats.clears++;
-      if (sv.diffUnlocked <= R.diff && R.diff < LOS.DIFFS.length - 1) sv.diffUnlocked = R.diff + 1;
       Sound.play('none'); Sound.sfx('stinger_win');
     }
     const newBest = R.bestRoom > sv.bestRoom;
@@ -1084,7 +1101,6 @@ const Game = (function () {
       won: how === 'win', room: R.bestRoom + 1, bestRoom: sv.bestRoom + 1, newBest,
       xp: R.xpGained, ess: R.essGained, kills: R.kills, time: R.time, lvStart: R.lvStart, lvEnd: sv.level,
       runes: R.runesFound.slice(), diff: R.diff, quit,
-      unlockedDiff: how === 'win' && sv.diffUnlocked > R.diff ? sv.diffUnlocked : 0,
     };
     Save.write();
     // Timer läuft in Spielzeit; beim Tod ist die Zeit verlangsamt (siehe update) -> 0.5 ≈ 1 s real

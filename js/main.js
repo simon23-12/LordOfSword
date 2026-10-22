@@ -1,5 +1,5 @@
 /* Lord of Sword – Eingabe, Hauptschleife, Skalierung */
-const Input = { keys: {}, mx: 640, my: 360, wx: 0, wy: 0, down: false, rdown: false, hover: null, spellQueue: [] };
+const Input = { keys: {}, mx: 640, my: 360, wx: 0, wy: 0, down: false, rdown: false, interact: false, hover: null, spellQueue: [] };
 
 (function () {
   'use strict';
@@ -57,20 +57,21 @@ const Input = { keys: {}, mx: 640, my: 360, wx: 0, wy: 0, down: false, rdown: fa
   window.addEventListener('keydown', e => {
     if (e.target && /INPUT|TEXTAREA/.test(e.target.tagName) && e.target.type !== 'range') return;
     Input.keys[e.code] = true;
-    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(e.code)) e.preventDefault();
-    if (e.code === 'F12') { // Vollbild an/aus (statt Entwicklertools)
-      e.preventDefault();
-      if (document.fullscreenElement) document.exitFullscreen();
-      else document.documentElement.requestFullscreen().catch(() => {});
-    }
-    if (e.code === 'KeyM') { Sound.init(); Sound.toggleMute(); }
+    const acts = Keys.actionsFor(e.code);
+    if (acts.length || ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(e.code)) e.preventDefault();
     if (e.code === 'Escape') {
-      if (App.settingsOpen) App.closeSettings();
+      if (App.keysOpen) App.closeKeys();
+      else if (App.settingsOpen) App.closeSettings();
       else if (App.mode === 'run') App.setPause(!App.paused);
     }
-    if (App.mode === 'run' && !App.paused && !e.repeat) {
-      const m = /^(?:Digit|Numpad)([1-5])$/.exec(e.code);
-      if (m) Input.spellQueue.push(+m[1] - 1);
+    if (e.repeat) return;
+    for (const a of acts) {
+      if (a === 'fullscreen') Keys.toggleFullscreen();
+      else if (a === 'mute') { Sound.init(); Sound.toggleMute(); }
+      else if (App.mode === 'run' && !App.paused) {
+        if (a === 'interact') Input.interact = true;
+        else if (/^spell[1-5]$/.test(a)) Input.spellQueue.push(+a[5] - 1);
+      }
     }
   });
   window.addEventListener('keyup', e => { Input.keys[e.code] = false; });

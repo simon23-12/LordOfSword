@@ -132,6 +132,12 @@ const Dungeon = (function () {
           lights.push({ x: bx * T + T / 2, y: by * T + T / 2 + 10, h: 50, r: 300, flick: rand() * 10, room: room.i, strength: 1.1, col: '#ff7a3a' });
         }
       }
+      // Feuerstelle in der Raummitte (jeder Raum außer Eingang und Boss): wird nach dem Säubern entzündbar und zum Startpunkt
+      if (!room.start && !room.boss) {
+        const light = { x: room.cx * T + T / 2, y: room.cy * T + T / 2, h: 40, r: 320, flick: room.i * 1.7, room: room.i, strength: 1.3, col: '#ff8a3a', off: true };
+        lights.push(light);
+        props.push({ type: 'bonfire', x: room.cx * T + T / 2, y: room.cy * T + T / 2, tall: true, room: room.i, lit: false, light });
+      }
       const area = room.w * room.h;
       const decor = [['bones', 'skull', 'crack', 'web'], ['bones', 'coffin', 'crack', 'candle'], ['mushroom', 'goo', 'crack', 'mushroom'], ['crystal', 'shard', 'crack', 'crystal'], ['blood', 'spike', 'bones', 'blood']][z];
       const cnt = Math.floor(area / (room.start ? 30 : 14));
@@ -140,6 +146,7 @@ const Dungeon = (function () {
         if (!isFloor(tx, ty) || roomAt[ty * W + tx] !== room.i) continue;
         const type = decor[Math.floor(rand() * decor.length)];
         const p = { type, x: tx * T + rand() * T, y: ty * T + rand() * T, a: rand() * 6.28, s: 0.7 + rand() * 0.6, tall: ['coffin', 'crystal', 'spike', 'candle'].includes(type), room: room.i };
+        if (!room.boss && !room.start && Math.hypot(p.x / T - (room.cx + 0.5), p.y / T - (room.cy + 0.5)) < 2.5) continue; // Platz für die Feuerstelle
         props.push(p);
         if (type === 'crystal') lights.push({ x: p.x, y: p.y, h: 30, r: 150, flick: rand() * 10, room: room.i, strength: 0.7, color: true, col: '#6fd8ff' });
         if (type === 'mushroom' && rand() < 0.5) lights.push({ x: p.x, y: p.y, h: 12, r: 100, flick: rand() * 10, room: room.i, strength: 0.5, color: true, col: '#b072ff' });
@@ -150,7 +157,7 @@ const Dungeon = (function () {
         const nb = 2 + Math.floor(rand() * 4);
         for (let k = 0; k < nb; k++) {
           const tx = room.x + 1 + Math.floor(rand() * (room.w - 2)), ty = room.y + 1 + Math.floor(rand() * (room.h - 2));
-          if (!isFloor(tx, ty) || roomAt[ty * W + tx] !== room.i || corr[ty * W + tx]) continue;
+          if (!isFloor(tx, ty) || roomAt[ty * W + tx] !== room.i || corr[ty * W + tx] || Math.hypot(tx - room.cx, ty - room.cy) < 2.5) continue;
           props.push({ type: 'barrel', x: tx * T + T / 2, y: ty * T + T / 2 + 8, tall: true, breakable: true, hp: 1, room: room.i, z });
         }
       }

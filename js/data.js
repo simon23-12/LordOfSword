@@ -15,7 +15,7 @@
     xpBase: 10, xpPow: 1.45, xpExp: 1.03,
     softCap: 30, lateGrow: 1.09, // ab so vielen Punkten in einem Wert wächst er langsamer
     spellGrow: 1.2,
-    magicUnlockLevel: 11, // vorher gibt es keine Zauber
+    magicUnlockLevel: 10, // vorher gibt es keine Zauber
     runeUnlockLevel: 15,
     runeSlotLevels: [15, 30, 45, 60, 75],
     // Spielerwerte
@@ -25,6 +25,8 @@
     attackInterval: 0.55,
     armorBase: 4, armorGrow: 1.22, armorK: 100, maxReduction: 0.8,
     moveSpeed: 200,
+    // Rückstoß beim Schwerthieb: startet klein und wächst langsam mit den Angriffspunkten (1 = ca. 1,2 Pixel)
+    knockBase: 18, knockPerPt: 1.4, knockMax: 90,
     // Sprint (Shift): Teil des Angriffs-Werts. Am Anfang kurz und mit sehr langer Abklingzeit.
     sprintUnlockLevel: 10, sprintDur: 1.0, sprintDurPerPt: 0.035, sprintDurMax: 2.6,
     sprintCd: 26, sprintCdPerPt: 0.07, sprintCdMin: 5, sprintMul: 1.75, sprintMulPerPt: 0.01, sprintMulMax: 2.3,
@@ -260,6 +262,7 @@
       reach: 62 * (1 + rb.wide / 100),
       arc: 1.9 * (1 + rb.wide / 150),
       xpMul: 1 + rb.xp / 100,
+      knock: Math.min(BAL.knockMax, BAL.knockBase + BAL.knockPerPt * pts.atk),
     };
   }
 

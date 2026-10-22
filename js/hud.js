@@ -62,6 +62,12 @@ const Hud = (function () {
     text(c, label, x + 31, y + 9, 11, '#d9cba0', 'center', 'bold');
   }
 
+  /** Kurzer Tastenname einer Aktion für die Leiste */
+  function kl(id) {
+    const code = Keys.slots(id).find(Boolean);
+    return !code ? '–' : code === 'Space' ? 'Space' : /^Shift/.test(code) ? 'Shift' : Keys.label(code);
+  }
+
   function drawBars(c, R, now) {
     const S = R.S, p = R.p, sv = Save.data;
     // Orbs
@@ -76,17 +82,17 @@ const Hud = (function () {
     // Kampf-Leiste: Hieb, Schild, Sprint
     const ax = 204, ay = 640;
     const swingCd = Math.max(0, p.atkCd) / S.interval;
-    slot(c, ax, ay, 'sword', '#e8ecf4', 'Space', { unlocked: true, cdf: swingCd, active: p.swingT >= 0 });
-    slot(c, ax + 68, ay, 'shield', '#aab4c8', 'Q', { unlocked: !!S.block, lockLevel: LOS.BAL.shieldUnlockLevel, active: p.blocking });
+    slot(c, ax, ay, 'sword', '#e8ecf4', kl('attack'), { unlocked: true, cdf: swingCd, active: p.swingT >= 0 });
+    slot(c, ax + 68, ay, 'shield', '#aab4c8', kl('block'), { unlocked: !!S.block, lockLevel: LOS.BAL.shieldUnlockLevel, active: p.blocking });
     const spr = S.sprint;
-    slot(c, ax + 136, ay, 'sprint', '#9fe0ff', 'Shift', { unlocked: !!spr, lockLevel: LOS.BAL.sprintUnlockLevel, active: p.sprinting,
+    slot(c, ax + 136, ay, 'sprint', '#9fe0ff', kl('sprint'), { unlocked: !!spr, lockLevel: LOS.BAL.sprintUnlockLevel, active: p.sprinting,
       cdf: spr ? (p.sprinting ? 0 : Math.min(1, p.sprintCd / spr.cd)) : 0, cdText: spr && !p.sprinting && p.sprintCd > 0 ? String(Math.ceil(p.sprintCd)) : '' });
     if (spr && p.sprinting) { rrect(c, ax + 138, ay + 52, 58 * Math.max(0, p.sprintT / spr.dur), 5, 2, '#9fe0ff'); }
     // Zauberleiste
     const bx = W / 2 - 5 * 33 - 1, by = 640;
     for (let i = 0; i < 5; i++) {
       const sp = LOS.SPELLS[i], x = bx + i * 68, un = S.mag >= sp.unlock;
-      slot(c, x, by, sp.id, sp.color, sp.key, { unlocked: un, lockLevel: sp.unlock, active: R.sel === i && un, cdf: un && R.cd[i] > 0 ? R.cd[i] / sp.cd : 0 });
+      slot(c, x, by, sp.id, sp.color, kl('spell' + (i + 1)), { unlocked: un, lockLevel: sp.unlock, active: R.sel === i && un, cdf: un && R.cd[i] > 0 ? R.cd[i] / sp.cd : 0 });
       if (un) {
         if (p.mana < sp.cost) { c.fillStyle = 'rgba(20,40,90,0.55)'; c.beginPath(); c.roundRect(x + 1, by + 1, 60, 60, 7); c.fill(); }
         text(c, String(sp.cost), x + 51, by + 52, 12, '#9fd0ff', 'center', 'bold');
@@ -108,6 +114,7 @@ const Hud = (function () {
     text(c, z.name, 24, 28, 20, z.accent, 'left', 'bold');
     text(c, `Raum ${R.room + 1} / ${LOS.NUM_ROOMS}  ·  ${LOS.DIFFS[R.diff].name}`, 24, 52, 14, '#cbbf9c', 'left', 'normal');
     text(c, `Besiegt ${R.kills}   ·   +${Math.floor(R.xpGained)} XP` + (R.essGained ? `   ·   +${R.essGained} Essenz` : ''), 24, 72, 14, '#cbbf9c', 'left', 'normal');
+    if (R.prompt) text(c, R.prompt, W / 2, 590, 20, '#ffe08a', 'center', 'bold');
     if (sv.unspent > 0) text(c, `${sv.unspent} Statuspunkt${sv.unspent > 1 ? 'e' : ''} verfügbar`, 24, 94, 14, '#ffe08a', 'left', 'bold');
     if (R.boss && R.bossActive && !R.boss.dead) {
       const b = R.boss, bw = 640, bxx = W / 2 - bw / 2, byy = 36;

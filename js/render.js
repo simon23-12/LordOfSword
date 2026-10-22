@@ -103,7 +103,7 @@ const Render = (function () {
   }
 
   /* ============================================================ Lauf-Szene */
-  const run = { scene: null, mapGroup: null, ent: null, fxg: null, curR: null, map: null, views: {}, stampN: 0, pool: [], fxPool: [], hoverRing: null, slash: null, playerView: null, flames: [], breakables: [], wall: null, wallIdx: null, wallCur: null, lastNow: 0 };
+  const run = { scene: null, mapGroup: null, ent: null, fxg: null, curR: null, map: null, views: {}, stampN: 0, pool: [], fxPool: [], hoverRing: null, slash: null, playerView: null, flames: [], fires: [], breakables: [], wall: null, wallIdx: null, wallCur: null, lastNow: 0 };
   const POOL = 6, FXPOOL = 3;
 
   function buildRunScene() {
@@ -174,7 +174,7 @@ const Render = (function () {
 
   function buildMap(map) {
     clearGroup(run.mapGroup);
-    run.flames = []; run.breakables = [];
+    run.flames = []; run.breakables = []; run.fires = [];
     let nf = 0, nw = 0;
     for (let y = 0; y < map.h; y++) for (let x = 0; x < map.w; x++) { if (map.tiles[y * map.w + x]) nf++; else if (wallVisible(map, x, y)) nw++; }
     const floor = new THREE.InstancedMesh(floorGeo, floorMat, nf), wall = new THREE.InstancedMesh(wallGeo, [wallSideMat, wallSideMat, wallTopMat, wallTopMat, wallSideMat, wallSideMat], nw);
@@ -213,6 +213,7 @@ const Render = (function () {
       g.traverse(o => { if (o.isMesh) { o.receiveShadow = true; if (o.userData.flame) { o.castShadow = false; run.flames.push(o); } } });
       run.mapGroup.add(g);
       if (pr.breakable) run.breakables.push({ pr, obj: g });
+      if (type === 'bonfire') run.fires.push({ pr, fireG: g.userData.fireG, readyG: g.userData.readyG });
     }
   }
 
@@ -360,7 +361,7 @@ const Render = (function () {
     run.lantern.position.set(p.x, 150, p.y); run.lantern.intensity = 14000 * flick * tune.lantern;
     // Lichtquellen der Karte: die nächsten sechs, mit sanftem Ein-/Ausblenden
     const cand = [];
-    for (const l of map.lights) { const dx = l.x - p.x, dy = l.y - p.y, d2 = dx * dx + dy * dy; if (d2 < 640 * 640) cand.push([d2, l]); }
+    for (const l of map.lights) { if (l.off) continue; const dx = l.x - p.x, dy = l.y - p.y, d2 = dx * dx + dy * dy; if (d2 < 640 * 640) cand.push([d2, l]); }
     cand.sort((a, b) => a[0] - b[0]);
     const top = new Set(cand.slice(0, POOL).map(c => c[1]));
     for (const s of run.pool) {
@@ -436,6 +437,7 @@ const Render = (function () {
     placeCamera(R.cam.x, R.cam.y, sx, sz);
     updateWalls(map, p.x, p.y, dt);
     for (const b of run.breakables) if (b.pr.broken && b.obj.visible) b.obj.visible = false;
+    for (const f of run.fires) { f.fireG.visible = !!f.pr.lit; f.readyG.visible = !f.pr.lit && map.rooms[f.pr.room].cleared; }
 
     const vis = [];
     for (const e of R.enemies) { if (e.dead && e.deadT > 0.9) continue; if (Math.abs(e.x - R.cam.x) < 760 && Math.abs(e.y - R.cam.y) < 760) vis.push(e); }

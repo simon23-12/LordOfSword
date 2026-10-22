@@ -20,7 +20,10 @@ findest Runen und kommst mit jedem Versuch ein Stück tiefer ins Untergrund-Verl
 | `1`–`5` | Zauber zum Mauszeiger wirken (der Feuerball ist zielsuchend) |
 | `Esc` | Pause (dort auch Spielstand-Export/-Import) |
 | `M` | Ton an/aus |
-| `F12` | Vollbild an/aus |
+| `E` | Feuerstelle entzünden |
+| `F12` | Vollbild an/aus (auch per Button im Hauptmenü) |
+
+Alle Tasten lassen sich unter **Einstellungen → Tastenbelegung** ändern (zwei Tasten pro Aktion). `Esc` und die Maustasten sind fest.
 
 Das Schwert trifft alle Gegner im Schwungbogen; Hiebe wechseln die Seite, haben Anlauf, Nachschwung, Schlagspur und Treffer-Stopp.
 
@@ -28,7 +31,7 @@ Das Schwert trifft alle Gegner im Schwungbogen; Hiebe wechseln die Seite, haben 
 
 - **Run = ein Abstieg ins Verlies** (15 Räume in 5 Zonen, am Ende der Boss Malgorath). Das Verlies ist **immer dasselbe** (gleiche Räume, gleiche Gegner und Champions) – `BAL.dungeonSeed` in `js/data.js`, `0` = zufällig. Stirbst du, gehst du ins Lager zurück – XP, Level und Runen bleiben dir.
 - **XP → Statuspunkte:** Jede Stufe gibt 1 Punkt. Die XP pro Stufe steigen stetig, die einfachen Gegner der ersten Zonen geben aber immer gleich viel – du musst also tiefer vordringen.
-- **Werte:** Angriff, Verteidigung, Leben – und **Zauber**, der erst ab **Stufe 11** existiert. Zauber werden durch investierte Zauberpunkte freigeschaltet
+- **Werte:** Angriff, Verteidigung, Leben – und **Zauber**, der erst ab **Stufe 10** existiert. Zauber werden durch investierte Zauberpunkte freigeschaltet
   (Feuerball 1, Frostnova 6, Kettenblitz 14, Meteorsturm 26, Götterzorn 42) und werden mit jedem Punkt stärker. Der **Feuerball** sucht sich selbst ein Ziel.
 - **Sprint (ab Stufe 10)** gehört zum **Angriffs**-Wert: Jeder Angriffspunkt verlängert den Sprint, macht ihn schneller und verkürzt die (anfangs sehr lange) Abklingzeit.
 - **Schild (ab Stufe 12)** gehört zum **Verteidigungs**-Wert: Jeder Verteidigungspunkt erhöht den Blockwert (50 % bis fast 90 %).
@@ -36,10 +39,12 @@ Das Schwert trifft alle Gegner im Schwungbogen; Hiebe wechseln die Seite, haben 
   und der Kämpfer selbst trägt **alle 10 Stufen eine neue Rüstung** (Rekrut → Soldat → … → Held der Tiefe). Im Lager siehst du den Fortschritt.
 - **Runen ab Stufe 15:** Gegner, Champions und Bosse lassen Runen fallen (4 Seltenheitsstufen, 15 Sorten). Runenplätze: Stufe 15, 30, 45, 60, 75.
   Drei Runen einer Stufe lassen sich zu einer höheren veredeln.
-- **Essenz (Mana-XP) ab Stufe 11:** Gegner lassen violette Kristalle fallen (Champions und Boss mehr, tiefere Zonen und höhere Schwierigkeit mehr wert). Im Lager unter den Runen („Zauberkunst“) werden damit Zauber verbessert: mehr Feuerbälle, längere Frostnova-Vereisung, mehr Kettenblitz-Sprünge, mehr Meteore und Lichtwellen.
+- **Essenz (Mana-XP) ab Stufe 10:** Gegner lassen violette Kristalle fallen (Champions und Boss mehr, tiefere Zonen und höhere Schwierigkeit mehr wert). Im Lager unter den Runen („Zauberkunst“) werden damit Zauber verbessert: mehr Feuerbälle, längere Frostnova-Vereisung, mehr Kettenblitz-Sprünge, mehr Meteore und Lichtwellen.
 - **Gegner skalieren nicht mit dem Helden:** Ihre Stärke hängt nur von Zone und Schwierigkeit ab – wer stark genug ist, marschiert durch die ersten Räume.
 - **Start in tieferen Zonen:** Hast du alle drei Räume einer Zone gesäubert, kannst du im Lager direkt dort beginnen.
-- **Nach dem Boss:** Schwierigkeit *Albtraum* und *Hölle* (mehr Leben/Schaden der Gegner, deutlich mehr XP, bessere Runen).
+- **Schwierigkeit:** *Normal*, *Albtraum* und *Hölle* sind von Anfang an wählbar (mehr Leben/Schaden der Gegner, deutlich mehr XP und Essenz, bessere Runen).
+- **Feuerstellen:** In der Mitte jedes Raums (außer Eingang und Boss) steht eine Feuerstelle. Ist der Raum gesäubert, kannst du sie entzünden (`E`) – sie wird dein Startpunkt und ist im Lager unter „Startpunkt“ (◀ ▶) wählbar. Man startet dann im bereits gesäuberten Raum.
+- **Rückstoß:** Treffer schieben Gegner nur wenig zurück; der Rückstoß wächst langsam mit den Angriffspunkten.
 - Der Spielstand liegt im `localStorage` des Browsers. **Export als JSON-Datei** (und Import) gibt es auf dem Titelbildschirm und im Menü *Ton & Hilfe*.
 
 ## Musik & Ton

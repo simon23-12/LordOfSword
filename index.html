@@ -28,6 +28,10 @@
       <button id="btn-continue" class="btn big">Weiter</button>
       <button id="btn-new" class="btn big">Neues Spiel</button>
     </div>
+    <div class="menu menu2">
+      <button id="btn-fs-title" class="btn fs-btn">Vollbild</button>
+      <button id="btn-settings-title" class="btn">Einstellungen</button>
+    </div>
     <div class="title-foot">
       <div>Kopfhörer empfohlen · Ein Klick startet Musik und Ton</div>
       <div class="link-row"><a href="#" id="btn-export">Spielstand exportieren (JSON)</a> · <a href="#" id="btn-import">importieren</a></div>
@@ -44,14 +48,15 @@
       <div class="start-box panel">
         <div class="row"><span class="lbl">Welt</span><span class="val">I · Das Untergrund-Verlies</span></div>
         <div class="row"><span class="lbl">Schwierigkeit</span><span class="val seg" id="seg-diff"></span></div>
-        <div class="row"><span class="lbl">Startpunkt</span><span class="val seg" id="seg-zone"></span></div>
+        <div class="row"><span class="lbl">Startpunkt</span><span class="val seg" id="seg-start"></span></div>
         <button id="btn-start" class="btn huge">In die Tiefe</button>
         <div class="hint" id="start-hint"></div>
       </div>
     </div>
     <div class="panel right" id="panel-runes"><div id="runes-box"></div><div id="spells-box"></div></div>
     <div class="camp-top-right">
-      <button class="btn small" id="btn-settings">Ton &amp; Hilfe</button>
+      <button class="btn small fs-btn" id="btn-fs-camp">Vollbild</button>
+      <button class="btn small" id="btn-settings">Einstellungen</button>
     </div>
   </div>
 
@@ -61,15 +66,10 @@
       <h2 id="pause-title">Pause</h2>
       <div class="vol"><label>Musik</label><input type="range" id="vol-music" min="0" max="100"></div>
       <div class="vol"><label>Effekte</label><input type="range" id="vol-sfx" min="0" max="100"></div>
-      <div class="help">
-        <b>Steuerung</b><br>
-        <kbd>W A S D</kbd> bewegen (relativ zum Bildschirm) · <kbd>rechte Maustaste</kbd>: hinlaufen (halten = weiterlaufen)<br>
-        <b>Schwert:</b> <kbd>linke Maustaste</kbd> (halten = weiter schlagen) oder <kbd>Leertaste</kbd> / <kbd>J</kbd> – immer Richtung Mauszeiger<br>
-        <b>Schild</b> (ab Stufe 12): <kbd>Q</kbd> / <kbd>K</kbd> halten – blockt Angriffe von vorn, ein Block im allerletzten Moment pariert ganz<br>
-        <b>Sprint</b> (ab Stufe 10): <kbd>Shift</kbd> halten beim Laufen – lange Abklingzeit, mit Angriffspunkten besser<br>
-        <kbd>1</kbd>–<kbd>5</kbd>: Zauber zum Mauszeiger (der Feuerball sucht sich sein Ziel)<br>
-        <kbd>Esc</kbd>: Pause · <kbd>M</kbd>: Ton an/aus · <kbd>F12</kbd>: Vollbild<br>
-        Rote Kugeln heilen, blaue geben Mana.
+      <div class="help" id="help-box"></div>
+      <div class="save-row">
+        <button class="btn small fs-btn" id="btn-fs-pause">Vollbild</button>
+        <button class="btn small" id="btn-keys">Tastenbelegung</button>
       </div>
       <div class="save-row">
         <button class="btn small" id="btn-export2">Spielstand exportieren (JSON)</button>
@@ -78,6 +78,20 @@
       <div class="btn-row">
         <button class="btn" id="btn-resume">Weiter</button>
         <button class="btn danger" id="btn-abandon">Aufgeben (ins Lager)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tastenbelegung -->
+  <div id="keys" class="screen hidden overlay">
+    <div class="panel dialog keys-dlg">
+      <h2>Tastenbelegung</h2>
+      <div class="keys-note">Klicke auf eine Taste und drücke dann die neue. <kbd>Entf</kbd> leert den Platz, <kbd>Esc</kbd> bricht ab. Maus: links schlagen, rechts laufen.</div>
+      <div id="keys-list" class="keys-list"></div>
+      <div class="keys-msg" id="keys-msg"></div>
+      <div class="btn-row">
+        <button class="btn danger" id="btn-keys-reset">Standard</button>
+        <button class="btn" id="btn-keys-done">Fertig</button>
       </div>
     </div>
   </div>
@@ -93,6 +107,7 @@
 
 <script src="vendor/three.bundle.js"></script>
 <script src="js/data.js"></script>
+<script src="js/keys.js"></script>
 <script src="js/save.js"></script>
 <script src="js/audio.js"></script>
 <script src="js/dungeon.js"></script>

@@ -691,6 +691,22 @@ const Models = (function () {
         P(g, 'box', M('#4a3524'), [4, 16, 4], [0, 38, 0]); P(g, 'box', iron, [10, 4, 10], [0, 47, 0]);
         for (const [w, h, c, dx] of [[11, 24, '#ff9a3a', 0], [7, 18, '#ffd070', 0.8]]) { const f = FX.flame(w, h, c, 1.3); f.position.set(dx, 47, 0); g.add(f); }
         break;
+      case 'bonfire': {
+        const stone = M('#4d4842'), log = M('#2c1c12', { sm: true });
+        for (let i = 0; i < 10; i++) { const a = i / 10 * TAU; P(g, 'box', stone, [5.5, 5, 7], [Math.cos(a) * 18, 2.5, Math.sin(a) * 18], [0, -a, 0]); }
+        P(g, 'cyl', M('#1a1512'), [16, 1.6, 16], [0, 0.8, 0]);
+        for (const a of [0, 2.1, 4.2]) { const lg = G(g, 0, 5, 0); lg.rotation.y = a; P(lg, 'cyl', log, [2.5, 26, 2.5], [0, 0, 0], [0, 0, PI / 2 - 0.18]); }
+        P(g, 'sph', M('#ff4a1a', { t: 'b', glow: 1.1 }), [4, 1.6, 4], [0, 4.5, 0]);
+        const fireG = G(g, 0, 0, 0);
+        for (const [w, h, c, dx] of [[26, 50, '#ff8a2a', 0], [17, 38, '#ffc060', 2], [11, 28, '#fff0b0', -2]]) { const f = FX.flame(w, h, c, 1.3); f.position.set(dx, 7, 0); fireG.add(f); }
+        fireG.visible = false;
+        const readyG = G(g, 0, 0, 0);
+        const rr_ = P(readyG, 'torus', glowM('#ffd27a', 1.6), [26, 26, 26], [0, 2, 0], [PI / 2, 0, 0]); rr_.castShadow = false;
+        const gl = FX.sprite('#ffcf70', 80, 0.35); gl.position.set(0, 12, 0); readyG.add(gl);
+        readyG.visible = false;
+        g.userData.fireG = fireG; g.userData.readyG = readyG;
+        break;
+      }
       case 'brazier':
         P(g, 'cyl', iron, [3, 20, 3], [0, 10, 0]); P(g, 'cyl', M('#2c282a', { t: 'p' }), [14, 9, 14], [0, 24, 0]);
         for (const [w, h, c, dx] of [[24, 44, '#ff8a2a', 0], [16, 34, '#ffc060', 2], [10, 26, '#fff0b0', -2]]) { const f = FX.flame(w, h, c, 1.3); f.position.set(dx, 28, 0); g.add(f); }
