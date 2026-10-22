@@ -1,5 +1,5 @@
 /* Lord of Sword – Eingabe, Hauptschleife, Skalierung */
-const Input = { keys: {}, mx: 640, my: 360, wx: 0, wy: 0, down: false, rclick: false, clickEdge: false, hover: null, spellQueue: [] };
+const Input = { keys: {}, mx: 640, my: 360, wx: 0, wy: 0, down: false, rdown: false, hover: null, spellQueue: [] };
 
 (function () {
   'use strict';
@@ -40,11 +40,14 @@ const Input = { keys: {}, mx: 640, my: 360, wx: 0, wy: 0, down: false, rclick: f
     Sound.init();
     mousePos(e);
     if (App.mode !== 'run' || App.paused) return;
-    if (e.button === 0) { Input.down = true; Input.clickEdge = true; }
-    if (e.button === 2) Input.rclick = true;
+    if (e.button === 0) Input.down = true;   // links: Schwerthieb Richtung Mauszeiger
+    if (e.button === 2) Input.rdown = true;  // rechts: hinlaufen
     e.preventDefault();
   });
-  window.addEventListener('mouseup', e => { if (e.button === 0) Input.down = false; });
+  window.addEventListener('mouseup', e => {
+    if (e.button === 0) Input.down = false;
+    if (e.button === 2) Input.rdown = false;
+  });
   window.addEventListener('mousemove', e => { mousePos(e); });
   canvas.addEventListener('contextmenu', e => e.preventDefault());
   stage.addEventListener('pointerdown', () => {
@@ -67,7 +70,7 @@ const Input = { keys: {}, mx: 640, my: 360, wx: 0, wy: 0, down: false, rclick: f
   });
   window.addEventListener('keyup', e => { Input.keys[e.code] = false; });
   window.addEventListener('blur', () => {
-    Input.keys = {}; Input.down = false;
+    Input.keys = {}; Input.down = false; Input.rdown = false;
     if (App.mode === 'run') App.setPause(true);
   });
 

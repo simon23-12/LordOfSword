@@ -34,7 +34,7 @@ const Game = (function () {
     R = {
       map, flow: Dungeon.makeFlow(map), S, diff, startRoom, runes,
       p: { x: sr.cx * T + T / 2, y: sr.cy * T + T / 2, r: 10, hp: S.maxHp, mana: S.maxMana, face: 0, swingT: -1, swingDur: 0.26, swingDir: 0, swingSide: 1, hitDone: true,
-        atkCd: 0, target: null, atkTarget: null, groundHold: false, anim: 0, moving: false, hurtT: 0, castT: 0, lastHurt: -99, regenAcc: 0, dead: false,
+        atkCd: 0, target: null, anim: 0, moving: false, hurtT: 0, castT: 0, lastHurt: -99, regenAcc: 0, dead: false,
         lunge: 0, sprintT: 0, sprintCd: 0, sprintUsed: 0, sprinting: false, blocking: false, blockT: 0, blockFlash: 0, parryFlash: 0, dust: 0 },
       enemies: [], eproj: [], pproj: [], fx: [], tele: [], timers: [], parts: [], texts: [], pickups: [],
       cam: { x: 0, y: 0, shake: 0 },
@@ -265,7 +265,6 @@ const Game = (function () {
     p.swingT = 0; p.hitDone = false; p.swingDur = Math.max(0.2, Math.min(0.34, S.interval * 0.42));
     p.swingDir = dir; p.face = dir; p.atkCd = S.interval; p.swingSide = -p.swingSide; p.lunge = 0.09;
     Sound.sfx('swing', 0.08);
-    if (p.atkTarget && !Input.down) p.atkTarget = null; // ein Klick = ein Hieb
   }
 
   function updatePlayer(dt) {
@@ -275,42 +274,23 @@ const Game = (function () {
     if (p.dead) return;
     const wx = Input.wx, wy = Input.wy;
     const aimA = Math.atan2(wy - p.y, wx - p.x);
-    const atkKey = !!(K['Space'] || K['KeyJ']);
+    const atkKey = !!(K['Space'] || K['KeyJ'] || Input.down); // Leertaste / J / linke Maustaste: Hieb Richtung Mauszeiger
 
     // --- Schild (Q / K halten)
     if (S.block && (K['KeyQ'] || K['KeyK']) && (p.blocking || p.swingT < 0)) {
-      if (!p.blocking) { p.blocking = true; p.blockT = 0; p.target = null; p.atkTarget = null; if (p.sprinting) endSprint(); Sound.sfx('shield', 0.1); }
+      if (!p.blocking) { p.blocking = true; p.blockT = 0; p.target = null; if (p.sprinting) endSprint(); Sound.sfx('shield', 0.1); }
       p.blockT += dt;
     } else p.blocking = false;
 
-    // --- Bewegung: WASD relativ zum Bildschirm (isometrisch), Klick auf Boden = hinlaufen
+    // --- Bewegung: WASD relativ zum Bildschirm (isometrisch), rechte Maustaste = hinlaufen (halten = weiterlaufen)
     const up = (K['KeyW'] || K['ArrowUp'] ? 1 : 0) - (K['KeyS'] || K['ArrowDown'] ? 1 : 0);
     const rt = (K['KeyD'] || K['ArrowRight'] ? 1 : 0) - (K['KeyA'] || K['ArrowLeft'] ? 1 : 0);
     let mx = -CY * up + SY * rt, my = -SY * up - CY * rt;
     const keyMove = !!(up || rt);
-    if (Input.clickEdge) {
-      Input.clickEdge = false;
-      p.target = null; p.atkTarget = null; p.groundHold = false;
-      const h = Input.hover;
-      if (h && !h.dead && !h.broken && !p.blocking) p.atkTarget = h; else p.groundHold = true;
-    }
-    if (!Input.down) p.groundHold = false;
-    if (keyMove) { p.target = null; p.atkTarget = null; }
-    else if (Input.down && !p.blocking) {
-      const h = Input.hover;
-      if (!p.atkTarget && !p.groundHold && h && !h.dead && !h.broken) p.atkTarget = h;
-      if (!p.atkTarget) p.target = { x: wx, y: wy };
-    }
-    let tg = p.atkTarget;
-    if (tg && (tg.dead || tg.broken || p.blocking)) tg = p.atkTarget = null;
-    let faceTarget = null;
+    if (keyMove || p.blocking) p.target = null;
+    else if (Input.rdown) p.target = { x: wx, y: wy };
     if (!keyMove) {
-      if (tg) {
-        p.target = null;
-        const dx = tg.x - p.x, dy = tg.y - p.y, d = hyp(dx, dy) || 1;
-        const need = tg.r ? S.reach * 0.7 + tg.r : S.reach * 0.55;
-        if (d > need) { mx = dx / d; my = dy / d; } else { mx = my = 0; faceTarget = Math.atan2(dy, dx); }
-      } else if (p.target) {
+      if (p.target) {
         const dx = p.target.x - p.x, dy = p.target.y - p.y, d = hyp(dx, dy);
         if (d < 8) p.target = null; else { mx = dx / d; my = dy / d; }
       } else { mx = 0; my = 0; }
@@ -344,10 +324,9 @@ const Game = (function () {
         if (p.dust <= 0) { p.dust = 0.045; burst(p.x - mx * 8, p.y - my * 8, '#a89878', 2, 55, 0.45, 3.5, 0.15, 2); }
       }
     }
-    // Blickrichtung: Schwung > Schild/Taste (Mauszeiger) > Zielgegner > Laufrichtung
+    // Blickrichtung: Schwung > Schild/Angriff (Mauszeiger) > Laufrichtung
     if (p.swingT < 0 && p.castT <= 0) {
       if (p.blocking || atkKey) p.face = aimA;
-      else if (faceTarget !== null) p.face = faceTarget;
       else if (p.moving) p.face = Math.atan2(my, mx);
     }
 
@@ -358,7 +337,7 @@ const Game = (function () {
     for (const e of R.enemies) if (!e.dead && e.state === 'awake' && hyp(e.x - p.x, e.y - p.y) < 520) { calm = false; break; }
     if (calm && R.time - p.lastHurt > 2.5 && p.hp < S.maxHp * 0.7) healPlayer(S.maxHp * BAL.restRegen * dt, true);
 
-    // --- Schwertangriff: Klick auf Gegner (Diablo-Stil) oder Taste Leertaste / J
+    // --- Schwertangriff: linke Maustaste / Leertaste / J (halten = weiter schlagen)
     p.atkCd -= dt;
     if (p.swingT >= 0) {
       p.swingT += dt;
@@ -370,19 +349,12 @@ const Game = (function () {
       if (p.swingT >= p.swingDur) p.swingT = -1;
     }
     if (!p.blocking && p.swingT < 0 && p.atkCd <= 0) {
-      let dir = null;
-      if (atkKey) dir = aimDir();
-      else if (tg) {
-        const dx = tg.x - p.x, dy = tg.y - p.y;
-        if (hyp(dx, dy) - (tg.r || 10) < S.reach - 8) dir = Math.atan2(dy, dx);
-      }
-      if (dir !== null) startSwing(dir);
+      if (atkKey) startSwing(aimDir());
     }
 
     // --- Eingaben für Zauber
     for (const k of Input.spellQueue) if (k >= 0) castSpell(k);
     Input.spellQueue.length = 0;
-    if (Input.rclick) { Input.rclick = false; castSpell(R.sel); }
     for (let i = 0; i < 5; i++) R.cd[i] = Math.max(0, R.cd[i] - dt);
     if (p.slowT > 0) p.slowT -= dt;
     markExplored();
@@ -1100,7 +1072,8 @@ const Game = (function () {
       unlockedDiff: how === 'win' && sv.diffUnlocked > R.diff ? sv.diffUnlocked : 0,
     };
     Save.write();
-    R.timers.push({ t: how === 'win' ? 1.2 : 1.6, fn: () => { if (G.onEnd) G.onEnd(R.summary); } });
+    // Timer läuft in Spielzeit; beim Tod ist die Zeit verlangsamt (siehe update) -> 0.5 ≈ 1 s real
+    R.timers.push({ t: how === 'win' ? 1.2 : 0.5, fn: () => { if (G.onEnd) G.onEnd(R.summary); } });
   }
 
   function abandon() {

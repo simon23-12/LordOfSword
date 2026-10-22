@@ -129,7 +129,7 @@ const Hud = (function () {
       c.globalAlpha = 1;
     }
     if (R.over === 'dead') {
-      const k = Math.min(1, R.overT / 1.2);
+      const k = Math.min(1, R.overT / 0.7);
       c.fillStyle = `rgba(30,0,0,${0.55 * k})`; c.fillRect(0, 0, W, H);
       c.globalAlpha = k; text(c, 'Du bist gefallen', W / 2, H / 2 - 20, 60, '#b3151b', 'center', 'bold'); c.globalAlpha = 1;
     }

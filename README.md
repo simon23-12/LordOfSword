@@ -12,13 +12,12 @@ findest Runen und kommst mit jedem Versuch ein Stück tiefer ins Untergrund-Verl
 | Eingabe | Aktion |
 | --- | --- |
 | `W A S D` / Pfeiltasten | bewegen (relativ zum Bildschirm, isometrisch) |
-| linke Maustaste auf den Boden | hinlaufen (halten = weiterlaufen) |
-| linke Maustaste **auf einen Gegner** | hinlaufen und zuschlagen (halten = weiter angreifen), wie in Diablo |
-| `Leertaste` oder `J` | Schwerthieb Richtung Mauszeiger (rastet auf Gegner in Reichweite ein) |
+| rechte Maustaste | hinlaufen (halten = weiterlaufen) |
+| linke Maustaste | Schwerthieb Richtung Mauszeiger (halten = weiter schlagen, rastet auf Gegner in Reichweite ein) |
+| `Leertaste` oder `J` | wie linke Maustaste |
 | `Q` oder `K` halten | Schild (ab Stufe 12): blockt Angriffe von vorn, ein Block im letzten Moment pariert ganz |
 | `Shift` halten beim Laufen | Sprint (ab Stufe 10) – am Anfang kurz und mit sehr langer Abklingzeit |
 | `1`–`5` | Zauber zum Mauszeiger wirken (der Feuerball ist zielsuchend) |
-| rechte Maustaste | zuletzt gewählten Zauber wirken |
 | `Esc` | Pause (dort auch Spielstand-Export/-Import) |
 | `M` | Ton an/aus |
 

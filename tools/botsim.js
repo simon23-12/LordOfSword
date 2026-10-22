@@ -10,7 +10,7 @@ const fs = require('fs'), path = require('path'), vm = require('vm');
 const root = path.join(__dirname, '..');
 global.LOS = require(path.join(root, 'js/data.js'));
 global.Sound = { play() {}, sfx() {}, setIntensity() {}, setZone() {}, init() {} };
-global.Input = { keys: {}, mx: 640, my: 360, wx: 0, wy: 0, down: false, rclick: false, clickEdge: false, hover: null, spellQueue: [] };
+global.Input = { keys: {}, mx: 640, my: 360, wx: 0, wy: 0, down: false, rdown: false, hover: null, spellQueue: [] };
 global.Save = {
   data: null, write() {},
 };
