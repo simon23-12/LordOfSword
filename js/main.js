@@ -58,6 +58,11 @@ const Input = { keys: {}, mx: 640, my: 360, wx: 0, wy: 0, down: false, rdown: fa
     if (e.target && /INPUT|TEXTAREA/.test(e.target.tagName) && e.target.type !== 'range') return;
     Input.keys[e.code] = true;
     if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(e.code)) e.preventDefault();
+    if (e.code === 'F12') { // Vollbild an/aus (statt Entwicklertools)
+      e.preventDefault();
+      if (document.fullscreenElement) document.exitFullscreen();
+      else document.documentElement.requestFullscreen().catch(() => {});
+    }
     if (e.code === 'KeyM') { Sound.init(); Sound.toggleMute(); }
     if (e.code === 'Escape') {
       if (App.settingsOpen) App.closeSettings();

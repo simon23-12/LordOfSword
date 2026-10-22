@@ -20,6 +20,7 @@ findest Runen und kommst mit jedem Versuch ein Stück tiefer ins Untergrund-Verl
 | `1`–`5` | Zauber zum Mauszeiger wirken (der Feuerball ist zielsuchend) |
 | `Esc` | Pause (dort auch Spielstand-Export/-Import) |
 | `M` | Ton an/aus |
+| `F12` | Vollbild an/aus |
 
 Das Schwert trifft alle Gegner im Schwungbogen; Hiebe wechseln die Seite, haben Anlauf, Nachschwung, Schlagspur und Treffer-Stopp.
 
