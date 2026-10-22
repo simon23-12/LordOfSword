@@ -7,8 +7,9 @@ const Keys = (function () {
     { id: 'down', name: 'Runter', def: ['KeyS', 'ArrowDown'] },
     { id: 'left', name: 'Links', def: ['KeyA', 'ArrowLeft'] },
     { id: 'right', name: 'Rechts', def: ['KeyD', 'ArrowRight'] },
-    { id: 'attack', name: 'Schwerthieb', def: ['Space', 'KeyJ'] },
-    { id: 'block', name: 'Schild', def: ['KeyQ', 'KeyK'] },
+    { id: 'moveto', name: 'Zum Mauszeiger laufen', def: ['Mouse1', ''] },
+    { id: 'attack', name: 'Schwerthieb', def: ['Mouse0', 'Space'] },
+    { id: 'block', name: 'Schild', def: ['Mouse2', 'KeyQ'] },
     { id: 'sprint', name: 'Sprint', def: ['ShiftLeft', 'ShiftRight'] },
     { id: 'interact', name: 'Feuerstelle entzünden', def: ['KeyE', ''] },
     spell(0), spell(1), spell(2), spell(3), spell(4),
@@ -43,6 +44,7 @@ const Keys = (function () {
     const named = { Space: 'Leertaste', ShiftLeft: 'Shift links', ShiftRight: 'Shift rechts', ControlLeft: 'Strg links', ControlRight: 'Strg rechts',
       AltLeft: 'Alt links', AltRight: 'Alt rechts', ArrowUp: '↑', ArrowDown: '↓', ArrowLeft: '←', ArrowRight: '→', Enter: 'Enter', Tab: 'Tab',
       Backquote: '^', Minus: 'ß', Equal: '´', Comma: ',', Period: '.', Slash: '-', Semicolon: 'Ö', Quote: 'Ä', BracketLeft: 'Ü', BracketRight: '+' };
+    if (/^Mouse\d$/.test(code)) return ['Maus links', 'Maus Mitte', 'Maus rechts'][+code[5]] || 'Maus ' + code[5];
     if (named[code]) return named[code];
     let m;
     if ((m = /^Key([A-Z])$/.exec(code))) return m[1];
@@ -88,6 +90,18 @@ const Keys = (function () {
     else if (e.code === 'Delete' || e.code === 'Backspace') cb(''); // leeren
     else cb(e.code);
   }, true);
+  // Maustasten beim Umbelegen: Klicks auf Buttons brechen nur ab, alles andere wird zur Taste
+  let menuUntil = 0;
+  if (typeof window !== 'undefined') {
+    window.addEventListener('mousedown', e => {
+      if (!listening) return;
+      if (e.target.closest && e.target.closest('button')) { listening = null; return; }
+      e.preventDefault(); e.stopImmediatePropagation();
+      const cb = listening; listening = null; menuUntil = Date.now() + 400;
+      cb('Mouse' + e.button);
+    }, true);
+    window.addEventListener('contextmenu', e => { if (listening || Date.now() < menuUntil) e.preventDefault(); }, true);
+  }
   const capture = cb => { listening = cb; };
   const cancelCapture = () => { listening = null; };
 

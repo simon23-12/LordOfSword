@@ -36,7 +36,8 @@ const Save = (function () {
       for (let z = 1; z <= (d.zoneUnlock | 0); z++) o.fires.push(z * LOS.BAL.roomsPerZone);
       o.startRoom = Math.min(d.startZone | 0, d.zoneUnlock | 0) * LOS.BAL.roomsPerZone;
     }
-    o.fires = [...new Set(o.fires.map(n => n | 0).filter(n => n >= 1 && n <= LOS.NUM_ROOMS - 2))].sort((a, b) => a - b);
+    const per = LOS.BAL.roomsPerZone; // gültige Startpunkte: Beginn der Zonen 2 bis 5
+    o.fires = [...new Set(o.fires.map(n => n | 0).filter(n => n >= per && n % per === 0 && n < LOS.NUM_ROOMS - 1))].sort((a, b) => a - b);
     o.startRoom = o.fires.includes(o.startRoom | 0) ? o.startRoom | 0 : 0;
     o.difficulty = Math.max(0, Math.min(LOS.DIFFS.length - 1, o.difficulty | 0));
     delete o.zoneUnlock; delete o.startZone; delete o.diffUnlocked;

@@ -136,8 +136,8 @@ const App = (function () {
     $('seg-diff').innerHTML = LOS.DIFFS.map((d, i) => `<button data-act="diff" data-i="${i}" class="${sv.difficulty === i ? 'on' : ''}" data-tip="${esc(`<b>${d.name}</b>Gegner ×${d.hp} Leben, ×${d.dmg} Schaden<br>Erfahrung ×${d.xp}, bessere Runen, mehr Essenz`)}">${d.name}</button>`).join('');
     // Startpunkt: Eingang oder eine entzündete Feuerstelle
     const spots = [0, ...sv.fires], cur = spots.includes(sv.startRoom) ? sv.startRoom : 0, zone = ZONES[Math.floor(cur / BAL.roomsPerZone)];
-    $('seg-start').innerHTML = `<button data-act="start-prev" ${spots.length < 2 ? 'disabled' : ''}>◀</button><span class="start-name" data-tip="${esc(`<b>${cur ? 'Feuerstelle' : 'Eingang'}</b>${zone.name} · Raum ${cur + 1} von ${LOS.NUM_ROOMS}`)}">${cur ? 'Feuer · ' : 'Eingang · '}Raum ${cur + 1}</span><button data-act="start-next" ${spots.length < 2 ? 'disabled' : ''}>▶</button>`;
-    $('start-hint').textContent = cur > 0 ? `Du beginnst an der Feuerstelle: ${zone.name}` : sv.unspent > 0 ? `Du hast ${sv.unspent} unverteilte Statuspunkte!` : 'Tipp: Entzünde im Verlies Feuerstellen – dort kannst du neu starten.';
+    $('seg-start').innerHTML = `<button data-act="start-prev" ${spots.length < 2 ? 'disabled' : ''}>◀</button><span class="start-name" data-tip="${esc(`<b>${cur ? zone.name : 'Eingang'}</b>Raum ${cur + 1} von ${LOS.NUM_ROOMS}`)}">${cur ? zone.short : 'Eingang'} · Raum ${cur + 1}</span><button data-act="start-next" ${spots.length < 2 ? 'disabled' : ''}>▶</button>`;
+    $('start-hint').textContent = cur > 0 ? `Du beginnst in: ${zone.name}` : sv.unspent > 0 ? `Du hast ${sv.unspent} unverteilte Statuspunkte!` : 'Tipp: Säubere die letzte Kammer einer Zone und entzünde die Feuerstelle – dann startest du in der nächsten Zone.';
     const st = sv.stats;
     $('camp-info').innerHTML = `Rekord: Raum ${sv.bestRoom + 1} von ${LOS.NUM_ROOMS}<br>${st.runs} Versuche · ${st.deaths} gefallen · ${st.clears} Siege · ${f0(st.kills)} Gegner besiegt`;
   }
@@ -250,12 +250,12 @@ const App = (function () {
   function renderHelp() {
     const L = Keys.labelFor, k = t => `<kbd>${esc(t)}</kbd>`;
     $('help-box').innerHTML = `<b>Steuerung</b><br>
-      Bewegen: ${k(L('up'))} ${k(L('left'))} ${k(L('down'))} ${k(L('right'))} (relativ zum Bildschirm) · ${k('rechte Maustaste')}: hinlaufen (halten = weiterlaufen)<br>
-      <b>Schwert:</b> ${k('linke Maustaste')} oder ${k(L('attack'))} – immer Richtung Mauszeiger (halten = weiter schlagen)<br>
+      Bewegen: ${k(L('up'))} ${k(L('left'))} ${k(L('down'))} ${k(L('right'))} (relativ zum Bildschirm) · ${k(L('moveto'))}: zum Mauszeiger laufen (halten = weiterlaufen)<br>
+      <b>Schwert:</b> ${k(L('attack'))} – immer Richtung Mauszeiger (halten = weiter schlagen)<br>
       <b>Schild</b> (ab Stufe ${BAL.shieldUnlockLevel}): ${k(L('block'))} halten – blockt Angriffe von vorn, ein Block im allerletzten Moment pariert ganz<br>
       <b>Sprint</b> (ab Stufe ${BAL.sprintUnlockLevel}): ${k(L('sprint'))} halten beim Laufen – lange Abklingzeit, mit Angriffspunkten besser<br>
       <b>Zauber</b> (ab Stufe ${BAL.magicUnlockLevel}): ${[1, 2, 3, 4, 5].map(i => k(L('spell' + i))).join(' ')} zum Mauszeiger<br>
-      <b>Feuerstelle:</b> ${k(L('interact'))} neben ihr, sobald der Raum gesäubert ist – sie wird dein Startpunkt<br>
+      <b>Feuerstelle</b> (letzter Raum jeder Zone): ${k(L('interact'))} neben ihr, sobald der Raum gesäubert ist – die nächste Zone wird dein Startpunkt<br>
       ${k('Esc')} Pause · ${k(L('mute'))} Ton an/aus · ${k(L('fullscreen'))} Vollbild<br>
       Rote Kugeln heilen, blaue geben Mana, violette Kristalle (Essenz) verbessern Zauber.`;
   }

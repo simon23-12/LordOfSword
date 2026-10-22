@@ -65,7 +65,7 @@ const Hud = (function () {
   /** Kurzer Tastenname einer Aktion für die Leiste */
   function kl(id) {
     const code = Keys.slots(id).find(Boolean);
-    return !code ? '–' : code === 'Space' ? 'Space' : /^Shift/.test(code) ? 'Shift' : Keys.label(code);
+    return !code ? '–' : code === 'Space' ? 'Space' : /^Shift/.test(code) ? 'Shift' : /^Mouse/.test(code) ? ['Maus L', 'Maus M', 'Maus R'][+code[5]] || 'Maus' : Keys.label(code);
   }
 
   function drawBars(c, R, now) {

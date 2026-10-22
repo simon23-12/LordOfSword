@@ -1,5 +1,5 @@
 /* Lord of Sword – Eingabe, Hauptschleife, Skalierung */
-const Input = { keys: {}, mx: 640, my: 360, wx: 0, wy: 0, down: false, rdown: false, interact: false, hover: null, spellQueue: [] };
+const Input = { keys: {}, mx: 640, my: 360, wx: 0, wy: 0, interact: false, hover: null, spellQueue: [] };
 
 (function () {
   'use strict';
@@ -36,18 +36,26 @@ const Input = { keys: {}, mx: 640, my: 360, wx: 0, wy: 0, down: false, rdown: fa
     const x = (e.clientX - r.left) / App.scale, y = (e.clientY - r.top) / App.scale;
     if (isFinite(x) && isFinite(y)) { Input.mx = x; Input.my = y; }
   }
+  /** Einmalige Aktionen (Zauber, Feuerstelle, Ton, Vollbild) für eine gedrückte Taste/Maustaste */
+  function trigger(code) {
+    for (const a of Keys.actionsFor(code)) {
+      if (a === 'fullscreen') Keys.toggleFullscreen();
+      else if (a === 'mute') { Sound.init(); Sound.toggleMute(); }
+      else if (App.mode === 'run' && !App.paused) {
+        if (a === 'interact') Input.interact = true;
+        else if (/^spell[1-5]$/.test(a)) Input.spellQueue.push(+a[5] - 1);
+      }
+    }
+  }
   canvas.addEventListener('mousedown', e => {
     Sound.init();
     mousePos(e);
     if (App.mode !== 'run' || App.paused) return;
-    if (e.button === 0) Input.down = true;   // links: Schwerthieb Richtung Mauszeiger
-    if (e.button === 2) Input.rdown = true;  // rechts: hinlaufen
+    Input.keys['Mouse' + e.button] = true; // Maustasten sind wie Tasten belegbar (Standard: links schlagen, rechts Schild, Mitte laufen)
+    trigger('Mouse' + e.button);
     e.preventDefault();
   });
-  window.addEventListener('mouseup', e => {
-    if (e.button === 0) Input.down = false;
-    if (e.button === 2) Input.rdown = false;
-  });
+  window.addEventListener('mouseup', e => { Input.keys['Mouse' + e.button] = false; });
   window.addEventListener('mousemove', e => { mousePos(e); });
   canvas.addEventListener('contextmenu', e => e.preventDefault());
   stage.addEventListener('pointerdown', () => {
@@ -64,19 +72,11 @@ const Input = { keys: {}, mx: 640, my: 360, wx: 0, wy: 0, down: false, rdown: fa
       else if (App.settingsOpen) App.closeSettings();
       else if (App.mode === 'run') App.setPause(!App.paused);
     }
-    if (e.repeat) return;
-    for (const a of acts) {
-      if (a === 'fullscreen') Keys.toggleFullscreen();
-      else if (a === 'mute') { Sound.init(); Sound.toggleMute(); }
-      else if (App.mode === 'run' && !App.paused) {
-        if (a === 'interact') Input.interact = true;
-        else if (/^spell[1-5]$/.test(a)) Input.spellQueue.push(+a[5] - 1);
-      }
-    }
+    if (!e.repeat) trigger(e.code);
   });
   window.addEventListener('keyup', e => { Input.keys[e.code] = false; });
   window.addEventListener('blur', () => {
-    Input.keys = {}; Input.down = false; Input.rdown = false;
+    Input.keys = {};
     if (App.mode === 'run') App.setPause(true);
   });
 

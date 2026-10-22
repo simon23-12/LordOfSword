@@ -12,10 +12,9 @@ findest Runen und kommst mit jedem Versuch ein Stück tiefer ins Untergrund-Verl
 | Eingabe | Aktion |
 | --- | --- |
 | `W A S D` / Pfeiltasten | bewegen (relativ zum Bildschirm, isometrisch) |
-| rechte Maustaste | hinlaufen (halten = weiterlaufen) |
-| linke Maustaste | Schwerthieb Richtung Mauszeiger (halten = weiter schlagen, rastet auf Gegner in Reichweite ein) |
-| `Leertaste` oder `J` | wie linke Maustaste |
-| `Q` oder `K` halten | Schild (ab Stufe 12): blockt Angriffe von vorn, ein Block im letzten Moment pariert ganz |
+| mittlere Maustaste | zum Mauszeiger laufen (halten = weiterlaufen) |
+| linke Maustaste oder `Leertaste` | Schwerthieb Richtung Mauszeiger (halten = weiter schlagen, rastet auf Gegner in Reichweite ein) |
+| rechte Maustaste oder `Q` halten | Schild (ab Stufe 12): blockt Angriffe von vorn, ein Block im letzten Moment pariert ganz |
 | `Shift` halten beim Laufen | Sprint (ab Stufe 10) – am Anfang kurz und mit sehr langer Abklingzeit |
 | `1`–`5` | Zauber zum Mauszeiger wirken (der Feuerball ist zielsuchend) |
 | `Esc` | Pause (dort auch Spielstand-Export/-Import) |
@@ -23,7 +22,7 @@ findest Runen und kommst mit jedem Versuch ein Stück tiefer ins Untergrund-Verl
 | `E` | Feuerstelle entzünden |
 | `F12` | Vollbild an/aus (auch per Button im Hauptmenü) |
 
-Alle Tasten lassen sich unter **Einstellungen → Tastenbelegung** ändern (zwei Tasten pro Aktion). `Esc` und die Maustasten sind fest.
+Alle Tasten lassen sich unter **Einstellungen → Tastenbelegung** ändern (zwei Tasten pro Aktion, auch Maustasten). Nur `Esc` ist fest.
 
 Das Schwert trifft alle Gegner im Schwungbogen; Hiebe wechseln die Seite, haben Anlauf, Nachschwung, Schlagspur und Treffer-Stopp.
 
@@ -43,7 +42,7 @@ Das Schwert trifft alle Gegner im Schwungbogen; Hiebe wechseln die Seite, haben 
 - **Gegner skalieren nicht mit dem Helden:** Ihre Stärke hängt nur von Zone und Schwierigkeit ab – wer stark genug ist, marschiert durch die ersten Räume.
 - **Start in tieferen Zonen:** Hast du alle drei Räume einer Zone gesäubert, kannst du im Lager direkt dort beginnen.
 - **Schwierigkeit:** *Normal*, *Albtraum* und *Hölle* sind von Anfang an wählbar (mehr Leben/Schaden der Gegner, deutlich mehr XP und Essenz, bessere Runen).
-- **Feuerstellen:** In der Mitte jedes Raums (außer Eingang und Boss) steht eine Feuerstelle. Ist der Raum gesäubert, kannst du sie entzünden (`E`) – sie wird dein Startpunkt und ist im Lager unter „Startpunkt“ (◀ ▶) wählbar. Man startet dann im bereits gesäuberten Raum.
+- **Feuerstellen:** Im letzten Raum jeder Zone (außer der letzten) steht eine Feuerstelle. Ist der Raum gesäubert, kannst du sie entzünden (`E`) – dann ist der Beginn der nächsten Zone (z. B. die Katakomben) im Lager unter „Startpunkt“ (◀ ▶) wählbar.
 - **Rückstoß:** Treffer schieben Gegner nur wenig zurück; der Rückstoß wächst langsam mit den Angriffspunkten.
 - Der Spielstand liegt im `localStorage` des Browsers. **Export als JSON-Datei** (und Import) gibt es auf dem Titelbildschirm und im Menü *Ton & Hilfe*.
 

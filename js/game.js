@@ -33,7 +33,7 @@ const Game = (function () {
     const sr = map.rooms[startRoom];
     R = {
       map, flow: Dungeon.makeFlow(map), S, diff, startRoom, runes,
-      p: { x: sr.cx * T + T / 2, y: sr.cy * T + (startRoom > 0 ? T * 1.5 : T / 2), r: 10, hp: S.maxHp, mana: S.maxMana, face: 0, swingT: -1, swingDur: 0.26, swingDir: 0, swingSide: 1, hitDone: true,
+      p: { x: sr.cx * T + T / 2, y: sr.cy * T + T / 2, r: 10, hp: S.maxHp, mana: S.maxMana, face: 0, swingT: -1, swingDur: 0.26, swingDir: 0, swingSide: 1, hitDone: true,
         atkCd: 0, target: null, anim: 0, moving: false, hurtT: 0, castT: 0, lastHurt: -99, regenAcc: 0, dead: false,
         lunge: 0, sprintT: 0, sprintCd: 0, sprintUsed: 0, sprinting: false, blocking: false, blockT: 0, blockFlash: 0, parryFlash: 0, dust: 0 },
       fires: map.props.filter(pr => pr.type === 'bonfire'), prompt: null,
@@ -46,9 +46,9 @@ const Game = (function () {
       flash: 0, lastTile: -1, kill: 0, hint: 0, orbsTaken: 0, hitstop: 0,
     };
     R.cam.x = R.p.x; R.cam.y = R.p.y;
-    for (const pr of R.fires) { pr.lit = fires.includes(pr.room); pr.light.off = !pr.lit; }
+    for (const pr of R.fires) { pr.lit = fires.includes(pr.unlocks); pr.light.off = !pr.lit; }
     for (const room of map.rooms) {
-      if (room.i < startRoom || (room.i === startRoom && startRoom > 0)) { room.cleared = true; continue; } // Feuerstellen-Raum ist schon gesäubert
+      if (room.i < startRoom) { room.cleared = true; continue; }
       withSeed(BAL.dungeonSeed + room.i * 7919, () => spawnRoom(room)); // jeder Raum hat immer die gleichen Gegner
     }
     R.sel = Math.max(0, LOS.SPELLS.filter(s => sv.pts.mag >= s.unlock).length - 1);
@@ -277,7 +277,7 @@ const Game = (function () {
     if (p.dead) return;
     const wx = Input.wx, wy = Input.wy;
     const aimA = Math.atan2(wy - p.y, wx - p.x);
-    const atkKey = Keys.down('attack') || Input.down; // Leertaste / J / linke Maustaste: Hieb Richtung Mauszeiger
+    const atkKey = Keys.down('attack'); // Leertaste / J / linke Maustaste: Hieb Richtung Mauszeiger
 
     // --- Schild (Q / K halten)
     if (S.block && Keys.down('block') && (p.blocking || p.swingT < 0)) {
@@ -291,7 +291,7 @@ const Game = (function () {
     let mx = -CY * up + SY * rt, my = -SY * up - CY * rt;
     const keyMove = !!(up || rt);
     if (keyMove || p.blocking) p.target = null;
-    else if (Input.rdown) p.target = { x: wx, y: wy };
+    else if (Keys.down('moveto')) p.target = { x: wx, y: wy };
     if (!keyMove) {
       if (p.target) {
         const dx = p.target.x - p.x, dy = p.target.y - p.y, d = hyp(dx, dy);
@@ -373,11 +373,11 @@ const Game = (function () {
   function lightFire(pr) {
     const sv = Save.data, p = R.p;
     pr.lit = true; pr.light.off = false;
-    if (!sv.fires.includes(pr.room)) sv.fires.push(pr.room);
+    if (!sv.fires.includes(pr.unlocks)) sv.fires.push(pr.unlocks);
     sv.fires.sort((a, b) => a - b);
-    sv.startRoom = pr.room; // die zuletzt entzündete Feuerstelle ist der neue Startpunkt (im Lager änderbar)
+    sv.startRoom = pr.unlocks; // der Beginn der nächsten Zone wird Startpunkt (im Lager änderbar)
     Save.write();
-    banner('Feuerstelle entzündet', `Raum ${pr.room + 1} ist jetzt dein Startpunkt`, '#ffb060');
+    banner('Feuerstelle entzündet', `${ZONES[R.map.rooms[pr.unlocks].zone].name} ist jetzt dein Startpunkt`, '#ffb060');
     Sound.sfx('unlock'); shake(3);
     burst(pr.x, pr.y, '#ffb060', 30, 220, 0.9, 3, -0.1, 14, true);
     addText(p.x, p.y, 70, 'Feuerstelle entzündet', '#ffb060', 20, 1.8);
@@ -481,9 +481,9 @@ const Game = (function () {
       addText(p.x, p.y, 70, 'Raum gesäubert', '#e8c97a', 20, 1.6);
       dropPickup('hp', room.cx * T + T / 2, room.cy * T + T / 2);
     }
-    if (!room.boss && room.i !== 0 && !R.over) {
+    if (!R.over) {
       const pr = R.fires.find(f => f.room === room.i);
-      if (pr && !pr.lit) { banner('Feuerstelle bereit', `Entzünde sie mit [${Keys.labelFor('interact')}], um hier neu zu starten`, '#ffb060'); Sound.sfx('unlock'); }
+      if (pr && !pr.lit) { banner('Feuerstelle bereit', `Entzünde sie mit [${Keys.labelFor('interact')}], um die ${ZONES[room.zone + 1].name} als Startpunkt freizuschalten`, '#ffb060'); Sound.sfx('unlock'); }
     }
   }
 
