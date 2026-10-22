@@ -34,7 +34,7 @@
     bodyTierEvery: 10,
     gearPts: [0, 5, 12, 22, 35, 52],
     // Drops
-    orbChance: 0.045, orbHeal: 0.22, restRegen: 0.0075, eliteOrbChance: 0.3, eliteOrbChance2: 0.18,
+    orbChance: 0.045, orbHeal: 0.22, eliteOrbChance: 0.3, eliteOrbChance2: 0.18,
     manaOrbChance: 0.08,
     runeChance: 0.012, runeChanceElite: 0.35,
     eliteChance: 0.07,

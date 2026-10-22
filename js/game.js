@@ -333,9 +333,6 @@ const Game = (function () {
     // --- Regeneration, Mana
     if (S.rb.regen > 0) healPlayer(S.maxHp * S.rb.regen / 100 * dt, true);
     if (S.maxMana > 0) R.p.mana = Math.min(S.maxMana, R.p.mana + S.manaRegen * dt);
-    let calm = true;
-    for (const e of R.enemies) if (!e.dead && e.state === 'awake' && hyp(e.x - p.x, e.y - p.y) < 520) { calm = false; break; }
-    if (calm && R.time - p.lastHurt > 2.5 && p.hp < S.maxHp * 0.7) healPlayer(S.maxHp * BAL.restRegen * dt, true);
 
     // --- Schwertangriff: linke Maustaste / Leertaste / J (halten = weiter schlagen)
     p.atkCd -= dt;
