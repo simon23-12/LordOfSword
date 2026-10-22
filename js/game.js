@@ -475,8 +475,8 @@ const Game = (function () {
     const S = R.S, sv = Save.data, f = 1 + S.rb.find / 100;
     const d = LOS.DIFFS[R.diff];
     if (e.elite) {
-      dropPickup('hp', e.x, e.y);
-      if (Math.random() < 0.6) dropPickup('hp', e.x, e.y);
+      if (Math.random() < BAL.eliteOrbChance) dropPickup('hp', e.x, e.y);
+      if (Math.random() < BAL.eliteOrbChance2) dropPickup('hp', e.x, e.y);
       if (S.maxMana > 0) dropPickup('mana', e.x, e.y);
     } else {
       if (Math.random() < BAL.orbChance * f) dropPickup('hp', e.x, e.y);
