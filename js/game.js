@@ -10,6 +10,7 @@ const Game = (function () {
   const rr = (a, b) => a + Math.random() * (b - a);
   const hyp = Math.hypot;
   const angDiff = (a, b) => { let d = a - b; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI; return d; };
+  const clamp = (x, lo, hi) => Math.max(lo, Math.min(hi, x));
   const pick = a => a[Math.floor(Math.random() * a.length)];
 
   /** Führt fn mit festem Zufallsstrom aus (Math.random wird danach wiederhergestellt). */
@@ -206,6 +207,21 @@ const Game = (function () {
     return Math.abs(angDiff(Math.atan2(fy - p.y, fx - p.x), p.face)) < 1.75;
   }
 
+  /** Reflexion (perfekte Parade): Nahkämpfer erleiden den Schaden selbst, Geschosse fliegen auf den Schützen zurück */
+  function reflectBack(src, raw, proj) {
+    const p = R.p;
+    addText(p.x, p.y, 84, 'Reflexion!', '#ffd24a', 18, 1.1);
+    if (proj) {
+      const o = proj.owner, sp = Math.max(260, hyp(proj.vx, proj.vy)) * 1.25;
+      let a = Math.atan2(-proj.vy, -proj.vx);
+      if (o && !o.dead) a = Math.atan2(o.y - proj.y, o.x - proj.x);
+      R.eproj.push({ x: proj.x, y: proj.y, z: proj.z, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, dmg: raw, r: proj.r + 2, life: 2.5, color: '#ffe27a', look: proj.look, owner: null, refl: true, target: o && !o.dead ? o : null, sp });
+    } else if (src && !src.dead) {
+      damageEnemy(src, raw, { color: '#ffd24a', stun: src.boss ? 0 : 0.4 });
+      burst(src.x, src.y, '#ffd24a', 12, 200, 0.4, 2.6, 0.2, src.r * 1.6, true);
+    }
+  }
+
   function hurtPlayer(raw, src, opts) {
     opts = opts || {};
     const p = R.p, S = R.S;
@@ -221,6 +237,7 @@ const Game = (function () {
         burst(sx, sy, '#fff2b8', 20, 280, 0.45, 2.6, 0.4, 24, true);
         Sound.sfx('crit', 0.1); shake(3); R.hitstop = Math.max(R.hitstop, 0.07);
         if (src && !src.dead && !src.boss && src.stun !== undefined) src.stun = Math.max(src.stun, 0.9);
+        if (S.block.reflect > 0 && Math.random() < S.block.reflect) reflectBack(src, raw, opts.proj);
         return;
       }
       mult = 1 - S.block.red;
@@ -812,8 +829,20 @@ const Game = (function () {
       b.life -= dt;
       b.x += b.vx * dt; b.y += b.vy * dt;
       if (map.solid(b.x, b.y)) b.life = 0;
+      if (b.refl) { // zurückgeworfenes Geschoss: trifft Gegner statt den Helden
+        if (b.target && !b.target.dead) {
+          const a = Math.atan2(b.target.y - b.y, b.target.x - b.x), c = Math.atan2(b.vy, b.vx), n = c + clamp(angDiff(a, c), -9 * dt, 9 * dt);
+          b.vx = Math.cos(n) * b.sp; b.vy = Math.sin(n) * b.sp;
+        }
+        for (const e of R.enemies) {
+          if (e.dead || hyp(e.x - b.x, e.y - b.y) > e.r + b.r + 2) continue;
+          damageEnemy(e, b.dmg, { color: '#ffd24a', stun: e.boss ? 0 : 0.4 });
+          b.life = 0; burst(b.x, b.y, '#ffe27a', 10, 150, 0.4, 2.6, 0, b.z, true); break;
+        }
+        continue;
+      }
       if (!p.dead && hyp(b.x - p.x, b.y - p.y) < b.r + 12) {
-        hurtPlayer(b.dmg, b.owner, { noThorns: true, from: { x: b.x - b.vx * 0.05, y: b.y - b.vy * 0.05 } });
+        hurtPlayer(b.dmg, b.owner, { noThorns: true, proj: b, from: { x: b.x - b.vx * 0.05, y: b.y - b.vy * 0.05 } });
         b.life = 0; burst(b.x, b.y, b.color, 7, 110, 0.35, 2.5, 0, b.z, true);
       }
     }
@@ -1142,7 +1171,7 @@ const Game = (function () {
     startRun, update, castSpell, abandon, unlockedSpells,
     clear() { R = null; },
     // Debug
-    _dbg: { killAll() { for (const e of R.enemies) if (!e.dead && !e.boss) damageEnemy(e, 1e12, { silent: true }); } },
+    _dbg: { hurt: (raw, src, opts) => hurtPlayer(raw, src, opts), killAll() { for (const e of R.enemies) if (!e.dead && !e.boss) damageEnemy(e, 1e12, { silent: true }); } },
   });
   Object.defineProperty(G, 'R', { get() { return R; } });
   return G;

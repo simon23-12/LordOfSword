@@ -34,7 +34,8 @@
     sprintUnlockLevel: 10, sprintDur: 1.0, sprintDurPerPt: 0.035, sprintDurMax: 2.6,
     sprintCd: 26, sprintCdPerPt: 0.07, sprintCdMin: 5, sprintMul: 1.75, sprintMulPerPt: 0.01, sprintMulMax: 2.3,
     // Schild (Taste Q / K halten): Teil des Verteidigungs-Werts
-    shieldUnlockLevel: 5, blockBase: 0.5, blockMax: 0.9, blockHalf: 25, blockMove: 0.5, parryWindow: 0.18,
+    shieldUnlockLevel: 5, reflectPerPt: 0.03, reflectMax: 0.5, // Reflexion bei perfekter Parade: +3 % je Verteidigungspunkt (max. 50 %)
+    blockBase: 0.5, blockMax: 0.9, blockHalf: 25, blockMove: 0.5, parryWindow: 0.18,
     // Optik: Kämpfer wird alle 10 Level aufgewertet; Schwert/Schild je nach Angriffs-/Verteidigungspunkten
     bodyTierEvery: 10,
     gearPts: [0, 5, 12, 22, 35, 52],
@@ -255,7 +256,7 @@
     } : null;
     const block = level >= BAL.shieldUnlockLevel ? {
       red: Math.min(BAL.blockMax, BAL.blockBase + (BAL.blockMax - BAL.blockBase) * pts.def / (pts.def + BAL.blockHalf)),
-      move: BAL.blockMove, parry: BAL.parryWindow,
+      move: BAL.blockMove, parry: BAL.parryWindow, reflect: Math.min(BAL.reflectMax, BAL.reflectPerPt * pts.def),
     } : null;
     const maxMana = mag > 0 ? 30 + 5 * mag : 0;
     const manaRegen = mag > 0 ? (2 + 0.35 * mag) * (1 + rb.arcane / 100) * BAL.manaRegenMul : 0;

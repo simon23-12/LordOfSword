@@ -45,7 +45,7 @@ const App = (function () {
       : '');
     const blk = S.block, nblk = nD.block;
     const defEff = `Schadensreduktion ${f1(S.dr * 100)}% <em>→ ${f1(nD.dr * 100)}%</em>` + (blk
-      ? `<br>Schild blockt ${f0(blk.red * 100)}% <em>→ ${f0(nblk.red * 100)}%</em>`
+      ? `<br>Schild blockt ${f0(blk.red * 100)}% <em>→ ${f0(nblk.red * 100)}%</em> · Reflexion ${f0(blk.reflect * 100)}% <em>→ ${f0(nblk.reflect * 100)}%</em>`
       : '');
     const stats = `
       ${mk('atk', 'Angriff', atkEff)}
@@ -74,7 +74,7 @@ const App = (function () {
         <span>Schaden pro Sekunde</span><b>${f0(S.dps)}</b>
         <span>Maximale Leben</span><b>${f0(S.maxHp)}</b>
         <span>Schadensreduktion</span><b>${f1(S.dr * 100)}%</b>
-        ${S.block ? `<span>Blockwert (Schild)</span><b>${f0(S.block.red * 100)}%</b>` : ''}
+        ${S.block ? `<span>Blockwert (Schild)</span><b>${f0(S.block.red * 100)}%</b><span>Reflexion bei Parade</span><b>${f0(S.block.reflect * 100)}%</b>` : ''}
         ${S.sprint ? `<span>Sprint / Abklingzeit</span><b>${f1(S.sprint.dur)} s / ${f0(S.sprint.cd)} s</b>` : ''}
         ${S.maxMana ? `<span>Mana / Regeneration</span><b>${f0(S.maxMana)} / ${f1(S.manaRegen)} pro s</b>` : ''}
         <span>Erfahrungsbonus</span><b>+${f0(S.rb.xp)}%</b>

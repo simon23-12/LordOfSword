@@ -33,7 +33,7 @@ Das Schwert trifft alle Gegner im Schwungbogen; Hiebe wechseln die Seite, haben 
 - **Werte:** Angriff, Verteidigung, Leben – und **Zauber**, der erst ab **Level 10** existiert. Zauber werden durch investierte Zauberpunkte freigeschaltet
   (Feuerball 1, Frostnova 6, Kettenblitz 14, Meteorsturm 26, Götterzorn 42) und werden mit jedem Punkt stärker. Der **Feuerball** sucht sich selbst ein Ziel.
 - **Sprint (ab Level 10)** gehört zum **Angriffs**-Wert: Jeder Angriffspunkt verlängert den Sprint, macht ihn schneller und verkürzt die (anfangs sehr lange) Abklingzeit.
-- **Schild (ab Level 5)** gehört zum **Verteidigungs**-Wert: Jeder Verteidigungspunkt erhöht den Blockwert (50 % bis fast 90 %).
+- **Schild (ab Level 5)** gehört zum **Verteidigungs**-Wert: Jeder Verteidigungspunkt erhöht den Blockwert (50 % bis fast 90 %). Dazu kommt **Reflexion**: Bei einer perfekten Parade besteht eine Chance (3 % je Verteidigungspunkt, max. 50 %), dass der Nahkämpfer den Schaden selbst erleidet bzw. Pfeile und andere Geschosse auf den Schützen zurückfliegen.
 - **Ausrüstung ist nicht tauschbar, nur aufrüstbar:** Schwert (nach Angriffspunkten) und Schild (nach Verteidigungspunkten) bekommen in sechs Stufen ein neues Aussehen,
   und der Kämpfer selbst trägt **alle 10 Level eine neue Rüstung** (Rekrut → Soldat → … → Held der Tiefe). Im Lager siehst du den Fortschritt.
 - **Runen ab Level 15:** Gegner, Champions und Bosse lassen Runen fallen (4 Seltenheitsstufen, 15 Sorten). Runenplätze: Level 15, 30, 45, 60, 75.
