@@ -890,7 +890,7 @@ const Game = (function () {
       b.blind = map.los(b.x, b.y, b.target.x, b.target.y) ? 0 : (b.blind || 0) + dt;
       if (b.blind > 0.6) b.target = null;
     } else b.target = null;
-    if (!b.target) b.target = findHomingTarget(b, 480, 2.4);
+    if (!b.target) b.target = findHomingTarget(b, 480, 1.3); // nur Ziele vor dem Ball, nie hinter ihm
     const cur = Math.atan2(b.vy, b.vx);
     let sp = hyp(b.vx, b.vy), aim = cur, turn = b.turn;
     if (b.target && b.age >= 0.06) aim = Math.atan2(b.target.y - b.y, b.target.x - b.x);
@@ -1132,7 +1132,7 @@ const Game = (function () {
     }
     if (!ok) return;
     p.mana -= sp.cost; R.cd[i] = sp.cd; R.sel = i; p.castT = 0.32; p.castColor = sp.color; p.castId = (p.castId || 0) + 1;
-    p.face = dirA;
+    p.face = dirA; p.snapFace = true; // Held dreht sich sofort in Wurfrichtung (kein Schuss aus dem Rücken)
     burst(hx, hy, sp.color, 10, 120, 0.4, 2.6, 0, 30, true);
   }
 

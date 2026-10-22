@@ -313,6 +313,7 @@ const Render = (function () {
   function updatePlayerView(R, now, dt) {
     const p = R.p, S = R.S, pv = ensurePlayerView(R), rig = pv.rig;
     pv.obj.position.set(p.x, 0, p.y);
+    if (p.snapFace) { rig.faceCur = p.face; p.snapFace = false; }
     const rate = p.swingT >= 0 ? 45 : 18;
     rig.faceCur += clamp(angDiff(p.face, rig.faceCur), -rate * dt, rate * dt);
     rig.g.rotation.y = -rig.faceCur;
