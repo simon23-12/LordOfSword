@@ -500,8 +500,7 @@ const Game = (function () {
     }
     if (sv.level >= BAL.magicUnlockLevel) {
       const val = Math.max(1, Math.round((e.zone + 1) * d.ess));
-      if (e.elite) for (let k = 0; k < BAL.essenceElite; k++) dropPickup('essence', e.x, e.y, null, val);
-      else if (Math.random() < BAL.essenceChance * f) dropPickup('essence', e.x, e.y, null, val);
+      if (Math.random() < (e.elite ? BAL.essenceEliteChance : BAL.essenceChance) * f) dropPickup('essence', e.x, e.y, null, val);
     }
     if (sv.level >= BAL.runeUnlockLevel) {
       const ch = (e.elite ? BAL.runeChanceElite : BAL.runeChance) * f * (1 + d.rune * 0.6);
@@ -798,7 +797,7 @@ const Game = (function () {
     R.fx.push({ k: 'beam', x: e.x, y: e.y, t: 0, dur: 1.6, color: '#ffd9a0', slim: true });
     for (let k = 0; k < 3; k++) dropRune(4, 2, e.x + rr(-30, 30), e.y + rr(-20, 20));
     for (let k = 0; k < 3; k++) dropPickup('hp', e.x, e.y);
-    if (Save.data.level >= BAL.magicUnlockLevel) for (let k = 0; k < BAL.essenceBoss; k++) dropPickup('essence', e.x, e.y, null, Math.max(1, Math.round(5 * LOS.DIFFS[R.diff].ess)));
+    if (Save.data.level >= BAL.magicUnlockLevel) for (let k = 0; k < BAL.essenceBoss; k++) dropPickup('essence', e.x, e.y, null, Math.max(1, Math.round(BAL.essenceBossTotal * LOS.DIFFS[R.diff].ess / BAL.essenceBoss)));
     // Diener sterben mit
     for (const o of R.enemies) if (!o.dead && o !== e && o.pack === e.pack && o.minion) { o.hp = 0; o.dead = true; o.deadT = 0; burst(o.x, o.y, '#d8d2c0', 10, 180, 0.7, 3, 1, 14); }
     const sv = Save.data;

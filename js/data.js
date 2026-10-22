@@ -22,9 +22,11 @@
 
     dmgBase: 9.1, dmgGrow: 1.26,
     hpBase: 100, hpGrow: 1.24, hpLinear: 6,
-    attackInterval: 0.55,
+    attackInterval: 0.62,  // Sekunden zwischen zwei Hieben; sinkt langsam mit Angriffspunkten
+    aspdPerPt: 0.006, aspdPtMax: 0.5, // +0,6 % Angriffstempo pro Angriffspunkt (max. +50 %)
     armorBase: 4, armorGrow: 1.22, armorK: 100, maxReduction: 0.8,
-    moveSpeed: 200,
+    moveSpeed: 185,        // Basis-Lauftempo; steigt langsam mit Lebenspunkten
+    moveVitPerPt: 1, moveVitMax: 40,
     // Rückstoß beim Schwerthieb: startet klein und wächst langsam mit den Angriffspunkten (1 = ca. 1,2 Pixel)
     knockBase: 18, knockPerPt: 1.4, knockMax: 90,
     // Sprint (Shift): Teil des Angriffs-Werts. Am Anfang kurz und mit sehr langer Abklingzeit.
@@ -40,7 +42,7 @@
     manaOrbChance: 0.08,
     manaRegenMul: 0.2,   // Faktor auf die Mana-Regeneration pro Sekunde
     // Essenz (Mana-XP): Währung für Zauber-Verbesserungen. Wert je Kugel = (Zone + 1) × Schwierigkeitsfaktor
-    essenceChance: 0.12, essenceElite: 3, essenceBoss: 10,
+    essenceChance: 0.015, essenceEliteChance: 0.375, essenceBoss: 5, essenceBossTotal: 6.25,
     spellUpCostGrow: 1.7,
     runeChance: 0.012, runeChanceElite: 0.35,
     eliteChance: 0.07,
@@ -237,7 +239,7 @@
     const rb = runeBonus(runes);
     const rawDmg = BAL.dmgBase * grow(BAL.dmgGrow, pts.atk);
     const dmg = rawDmg * (1 + rb.dmg / 100);
-    const interval = BAL.attackInterval / (1 + rb.aspd / 100);
+    const interval = BAL.attackInterval / (1 + rb.aspd / 100 + Math.min(BAL.aspdPtMax, BAL.aspdPerPt * pts.atk));
     const critCh = 0.05 + rb.crit / 100;
     const armor = BAL.armorBase * grow(BAL.armorGrow, pts.def);
     const red = Math.min(BAL.maxReduction, armor / (armor + BAL.armorK));
@@ -259,7 +261,7 @@
       level, pts, rb, dmg, interval, critCh, critMul: 1.6, armor, red, dr, maxHp: hp, sprint, block,
       mag, maxMana, manaRegen,
       dps: dmg * (1 + critCh * 0.6) / interval,
-      move: BAL.moveSpeed * (1 + rb.move / 100),
+      move: (BAL.moveSpeed + Math.min(BAL.moveVitMax, BAL.moveVitPerPt * pts.vit)) * (1 + rb.move / 100),
       reach: 62 * (1 + rb.wide / 100),
       arc: 1.9 * (1 + rb.wide / 150),
       xpMul: 1 + rb.xp / 100,

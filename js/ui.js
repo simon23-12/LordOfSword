@@ -38,7 +38,7 @@ const App = (function () {
       : `Erster Punkt öffnet das Mana <em>→ ${f0(nM.maxMana)}</em>`;
     const chips = SPELLS.map(s => `<span class="chip ${sv.pts.mag >= s.unlock ? 'on' : ''}" data-tip="${esc(`<b style="color:${s.color}">${s.name}</b>${s.desc}<br>Kosten ${s.cost} Mana · Taste ${s.key}`)}">${s.name} · ${s.unlock}</span>`).join('');
     const spr = S.sprint, nspr = nA.sprint;
-    const atkEff = `Schwertschaden ${f0(S.dmg)} <em>→ ${f0(nA.dmg)}</em><br>` + (spr
+    const atkEff = `Schwertschaden ${f0(S.dmg)} <em>→ ${f0(nA.dmg)}</em> · Hiebe/s ${f1(1 / S.interval)} <em>→ ${f1(1 / nA.interval)}</em><br>` + (spr
       ? `Sprint ${f1(spr.dur)} s <em>→ ${f1(nspr.dur)}</em> · Pause ${f0(spr.cd)} s <em>→ ${f0(nspr.cd)}</em>`
       : `<span style="color:#8d96ad">Sprint ab Stufe ${BAL.sprintUnlockLevel} (${esc(Keys.labelFor('sprint'))})</span>`);
     const blk = S.block, nblk = nD.block;
@@ -48,7 +48,7 @@ const App = (function () {
     const stats = `
       ${mk('atk', 'Angriff', atkEff)}
       ${mk('def', 'Verteidigung', defEff)}
-      ${mk('vit', 'Leben', `Max. Leben ${f0(S.maxHp)} <em>→ ${f0(nV.maxHp)}</em>`)}
+      ${mk('vit', 'Leben', `Max. Leben ${f0(S.maxHp)} <em>→ ${f0(nV.maxHp)}</em><br>Lauftempo ${f0(S.move)} <em>→ ${f0(nV.move)}</em>`)}
       ${magLocked ? mk('mag', 'Zauber', `Die Magie erwacht ab <b style="color:#ffe08a">Stufe ${BAL.magicUnlockLevel}</b>.`, `Die Magie erwacht ab <b style="color:#ffe08a">Stufe ${BAL.magicUnlockLevel}</b>.`)
         : `<div class="stat"><div class="nm">Zauber<b>${sv.pts.mag}</b></div><button class="btn" data-act="add" data-stat="mag" ${sv.unspent > 0 ? '' : 'disabled'} data-tip="${esc('<b>Zauber +1</b>Shift-Klick: +5 Punkte')}">+</button><div class="eff">${magEff}</div><div class="spell-chips">${chips}</div></div>`}`;
     const G = LOS.GEAR, tS = LOS.gearTier(sv.pts.atk), tD = LOS.gearTier(sv.pts.def), tB = LOS.bodyTier(sv.level);
