@@ -881,13 +881,30 @@ const Game = (function () {
     }
     return best;
   }
+  /** Zielsuchender Feuerball: verfolgt sein Ziel, sucht bei Verlust ein neues und weicht Wänden aus (gleitet an Ecken entlang). */
   function steerHoming(b, dt) {
+    const map = R.map;
     b.age = (b.age || 0) + dt;
-    if (!b.target || b.target.dead) b.target = findHomingTarget(b, 340, 1.4);
-    if (!b.target || b.age < 0.08) return;
-    const cur = Math.atan2(b.vy, b.vx), want = Math.atan2(b.target.y - b.y, b.target.x - b.x);
-    const da = Math.max(-b.turn * dt, Math.min(b.turn * dt, angDiff(want, cur)));
-    const sp = Math.min(b.maxSp, hyp(b.vx, b.vy) + 420 * dt);
+    // Ziel verloren (tot oder länger ohne Sicht)? Dann neues suchen
+    if (b.target && !b.target.dead) {
+      b.blind = map.los(b.x, b.y, b.target.x, b.target.y) ? 0 : (b.blind || 0) + dt;
+      if (b.blind > 0.6) b.target = null;
+    } else b.target = null;
+    if (!b.target) b.target = findHomingTarget(b, 480, 2.4);
+    const cur = Math.atan2(b.vy, b.vx);
+    let sp = hyp(b.vx, b.vy), aim = cur, turn = b.turn;
+    if (b.target && b.age >= 0.06) aim = Math.atan2(b.target.y - b.y, b.target.x - b.x);
+    // Wandvermeidung: Vorausblick; ist die Richtung blockiert, die nächste freie Richtung zum Ziel nehmen
+    const look = sp * 0.15 + 16;
+    const clear = a => !map.solid(b.x + Math.cos(a) * look, b.y + Math.sin(a) * look) && !map.solid(b.x + Math.cos(a) * look * 0.5, b.y + Math.sin(a) * look * 0.5);
+    if (!clear(aim)) {
+      let found = null;
+      for (let k = 1; k <= 9 && found === null; k++) for (const s of [1, -1]) { if (clear(aim + s * k * 0.3)) { found = aim + s * k * 0.3; break; } }
+      if (found !== null) { aim = found; turn = Math.max(turn, 15); }
+    }
+    if (!b.target && aim === cur) return;
+    const da = clamp(angDiff(aim, cur), -turn * dt, turn * dt);
+    sp = Math.min(b.maxSp, sp + 420 * dt);
     b.vx = Math.cos(cur + da) * sp; b.vy = Math.sin(cur + da) * sp;
   }
 
@@ -1020,6 +1037,15 @@ const Game = (function () {
           if (R.map.los(p.x, p.y, e.x, e.y)) cands.push({ e, sc: dc + da * 200 });
         }
         cands.sort((a, b) => a.sc - b.sc);
+        // ohne Sichtlinie: nächsten Gegner im selben Raum vor dir anpeilen (Ball weicht Wänden aus und sucht den Weg)
+        if (!cands.length) {
+          let bd = 460;
+          for (const e of R.enemies) {
+            if (e.dead || e.room !== R.room) continue;
+            const d = hyp(e.x - p.x, e.y - p.y);
+            if (d < bd && Math.abs(angDiff(Math.atan2(e.y - p.y, e.x - p.x), dirA)) < 1.1) { bd = d; cands.length = 0; cands.push({ e, sc: d }); }
+          }
+        }
         // mehrere Feuerbälle fächern sich leicht auf und nehmen verschiedene Ziele, sonst das beste Ziel
         for (let n = 0; n < fx.count; n++) {
           const a = dirA + (n - (fx.count - 1) / 2) * 0.14;
