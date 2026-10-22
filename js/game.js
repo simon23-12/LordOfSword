@@ -1036,8 +1036,10 @@ const Game = (function () {
         Sound.sfx('nova'); shake(3);
         for (const e of R.enemies) {
           if (e.dead || hyp(e.x - p.x, e.y - p.y) > 220 + e.r) continue;
-          damageEnemy(e, power * rr(0.92, 1.08), { color: sp.color, stun: e.boss ? 0 : fx.stun });
+          // kein Schaden, nur Verlangsamung (weckt aber schlafende Gegner)
+          if (e.state === 'sleep') { e.state = 'awake'; wakePack(e.pack); }
           e.slowT = fx.slowT; e.slowF = Math.max(e.slowF, 0.6);
+          burst(e.x, e.y, sp.color, 6, 120, 0.5, 2.4, 0, e.r * 1.4, true);
         }
         break;
       }
