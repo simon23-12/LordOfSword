@@ -13,7 +13,7 @@
 </head>
 <body>
 <div id="bar">
-  <a href="?set=enemies">Gegner</a><a href="?set=players">Kämpfer (Stufe 0–80)</a><a href="?set=poses">Posen</a><a href="?set=gear">Schwerter &amp; Schilde</a>
+  <a href="?set=enemies">Gegner</a><a href="?set=players">Kämpfer (Level 0–80)</a><a href="?set=poses">Posen</a><a href="?set=gear">Schwerter &amp; Schilde</a>
 </div>
 <script src="../vendor/three.bundle.js"></script>
 <script src="../js/data.js"></script>
@@ -54,7 +54,7 @@ if (set === 'enemies') {
     const rig = Models.player(t, Math.min(5, Math.floor(t * 0.7)), Math.min(5, Math.floor(t * 0.7)), t >= 1);
     const [x, z] = place(t, 9); const holder = new THREE.Group(); holder.position.set(x, 0, z); holder.rotation.y = -0.6; holder.add(rig.g); scene.add(holder);
     rig.g.traverse(o => { if (o.isMesh) o.castShadow = true; });
-    items.push({ rig, update(tm) { Models.animPlayer(rig, fakeP({ anim: tm }), S, tm); }, x, z, label: `Stufe ${t * 10} – ${LOS.GEAR.body[t]}` });
+    items.push({ rig, update(tm) { Models.animPlayer(rig, fakeP({ anim: tm }), S, tm); }, x, z, label: `Level ${t * 10} – ${LOS.GEAR.body[t]}` });
   }
 } else if (set === 'poses') {
   const poses = [['Stehen', {}], ['Laufen', { moving: true }], ['Sprint', { moving: true, sprinting: true }], ['Schwung 20%', { swingT: 0.06 }], ['Schwung 40%', { swingT: 0.12 }], ['Schwung 55%', { swingT: 0.165 }], ['Schwung 80%', { swingT: 0.24 }], ['Block', { blocking: true, blockT: 1 }], ['Zauber', { castT: 0.2, castColor: '#ff8a2a' }], ['Gegenschwung 40%', { swingT: 0.12, swingSide: -1 }], ['Parade-Blitz', { blocking: true, blockT: 1, parryFlash: 0.3 }], ['Hieb 100%', { swingT: 0.29 }]];

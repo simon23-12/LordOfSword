@@ -26,7 +26,7 @@
     aspdPerPt: 0.006, aspdPtMax: 0.5, // +0,6 % Angriffstempo pro Angriffspunkt (max. +50 %)
     armorBase: 4, armorGrow: 1.22, armorK: 100, maxReduction: 0.8,
     moveSpeed: 185,        // Basis-Lauftempo; steigt langsam mit Lebenspunkten
-    moveVitPerPt: 1, moveVitMax: 40,
+    moveVitPerPt: 0.5, moveVitMax: 15,
     // Rückstoß beim Schwerthieb: startet klein und wächst langsam mit den Angriffspunkten (1 = ca. 1,2 Pixel)
     knockBase: 18, knockPerPt: 1.4, knockMax: 90,
     // Sprint (Shift): Teil des Angriffs-Werts. Am Anfang kurz und mit sehr langer Abklingzeit.
@@ -34,7 +34,7 @@
     sprintCd: 26, sprintCdPerPt: 0.07, sprintCdMin: 5, sprintMul: 1.75, sprintMulPerPt: 0.01, sprintMulMax: 2.3,
     // Schild (Taste Q / K halten): Teil des Verteidigungs-Werts
     shieldUnlockLevel: 5, blockBase: 0.5, blockMax: 0.9, blockHalf: 25, blockMove: 0.5, parryWindow: 0.18,
-    // Optik: Kämpfer wird alle 10 Stufen aufgewertet; Schwert/Schild je nach Angriffs-/Verteidigungspunkten
+    // Optik: Kämpfer wird alle 10 Level aufgewertet; Schwert/Schild je nach Angriffs-/Verteidigungspunkten
     bodyTierEvery: 10,
     gearPts: [0, 5, 12, 22, 35, 52],
     // Drops
@@ -230,7 +230,7 @@
     for (let i = 0; i < BAL.gearPts.length; i++) if (points >= BAL.gearPts[i]) t = i;
     return t;
   }
-  /** Rüstungsstufe (0..8) des Kämpfers: alle 10 Stufen eine neue Optik */
+  /** Rüstungsstufe (0..8) des Kämpfers: alle 10 Level eine neue Optik */
   function bodyTier(level) { return Math.min(GEAR.body.length - 1, Math.floor(level / BAL.bodyTierEvery)); }
   /** Nächste Schwelle für die Ausrüstung oder null */
   function gearNext(points) { const t = gearTier(points); return t + 1 < BAL.gearPts.length ? BAL.gearPts[t + 1] : null; }

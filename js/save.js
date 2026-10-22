@@ -86,7 +86,7 @@ const Save = (function () {
   }
   function fileName() {
     const d = new Date(), p = n => String(n).padStart(2, '0');
-    return `lordofsword-stufe${data.level}-${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}.json`;
+    return `lordofsword-level${data.level}-${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}.json`;
   }
 
   return {

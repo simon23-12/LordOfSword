@@ -14,8 +14,8 @@ findest Runen und kommst mit jedem Versuch ein Stück tiefer ins Untergrund-Verl
 | `W A S D` / Pfeiltasten | bewegen (relativ zum Bildschirm, isometrisch) |
 | mittlere Maustaste | zum Mauszeiger laufen (halten = weiterlaufen) |
 | linke Maustaste oder `Leertaste` | Schwerthieb Richtung Mauszeiger (halten = weiter schlagen, rastet auf Gegner in Reichweite ein) |
-| rechte Maustaste oder `Q` halten | Schild (ab Stufe 5): blockt Angriffe von vorn, ein Block im letzten Moment pariert ganz |
-| `Shift` halten beim Laufen | Sprint (ab Stufe 10) – am Anfang kurz und mit sehr langer Abklingzeit |
+| rechte Maustaste oder `Q` halten | Schild (ab Level 5): blockt Angriffe von vorn, ein Block im letzten Moment pariert ganz |
+| `Shift` halten beim Laufen | Sprint (ab Level 10) – am Anfang kurz und mit sehr langer Abklingzeit |
 | `1`–`5` | Zauber zum Mauszeiger wirken (der Feuerball ist zielsuchend) |
 | `Esc` | Pause (dort auch Spielstand-Export/-Import) |
 | `M` | Ton an/aus |
@@ -29,16 +29,16 @@ Das Schwert trifft alle Gegner im Schwungbogen; Hiebe wechseln die Seite, haben 
 ## Spielprinzip
 
 - **Run = ein Abstieg ins Verlies** (15 Räume in 5 Zonen, am Ende der Boss Malgorath). Das Verlies ist **immer dasselbe** (gleiche Räume, gleiche Gegner und Champions) – `BAL.dungeonSeed` in `js/data.js`, `0` = zufällig. Stirbst du, gehst du ins Lager zurück – XP, Level und Runen bleiben dir.
-- **XP → Statuspunkte:** Jede Stufe gibt 1 Punkt. Die XP pro Stufe steigen stetig, die einfachen Gegner der ersten Zonen geben aber immer gleich viel – du musst also tiefer vordringen.
-- **Werte:** Angriff, Verteidigung, Leben – und **Zauber**, der erst ab **Stufe 10** existiert. Zauber werden durch investierte Zauberpunkte freigeschaltet
+- **XP → Statuspunkte:** Jedes Level gibt 1 Punkt. Die XP pro Level steigen stetig, die einfachen Gegner der ersten Zonen geben aber immer gleich viel – du musst also tiefer vordringen.
+- **Werte:** Angriff, Verteidigung, Leben – und **Zauber**, der erst ab **Level 10** existiert. Zauber werden durch investierte Zauberpunkte freigeschaltet
   (Feuerball 1, Frostnova 6, Kettenblitz 14, Meteorsturm 26, Götterzorn 42) und werden mit jedem Punkt stärker. Der **Feuerball** sucht sich selbst ein Ziel.
-- **Sprint (ab Stufe 10)** gehört zum **Angriffs**-Wert: Jeder Angriffspunkt verlängert den Sprint, macht ihn schneller und verkürzt die (anfangs sehr lange) Abklingzeit.
-- **Schild (ab Stufe 5)** gehört zum **Verteidigungs**-Wert: Jeder Verteidigungspunkt erhöht den Blockwert (50 % bis fast 90 %).
+- **Sprint (ab Level 10)** gehört zum **Angriffs**-Wert: Jeder Angriffspunkt verlängert den Sprint, macht ihn schneller und verkürzt die (anfangs sehr lange) Abklingzeit.
+- **Schild (ab Level 5)** gehört zum **Verteidigungs**-Wert: Jeder Verteidigungspunkt erhöht den Blockwert (50 % bis fast 90 %).
 - **Ausrüstung ist nicht tauschbar, nur aufrüstbar:** Schwert (nach Angriffspunkten) und Schild (nach Verteidigungspunkten) bekommen in sechs Stufen ein neues Aussehen,
-  und der Kämpfer selbst trägt **alle 10 Stufen eine neue Rüstung** (Rekrut → Soldat → … → Held der Tiefe). Im Lager siehst du den Fortschritt.
-- **Runen ab Stufe 15:** Gegner, Champions und Bosse lassen Runen fallen (4 Seltenheitsstufen, 15 Sorten). Runenplätze: Stufe 15, 30, 45, 60, 75.
+  und der Kämpfer selbst trägt **alle 10 Level eine neue Rüstung** (Rekrut → Soldat → … → Held der Tiefe). Im Lager siehst du den Fortschritt.
+- **Runen ab Level 15:** Gegner, Champions und Bosse lassen Runen fallen (4 Seltenheitsstufen, 15 Sorten). Runenplätze: Level 15, 30, 45, 60, 75.
   Drei Runen einer Stufe lassen sich zu einer höheren veredeln.
-- **Essenz (Mana-XP) ab Stufe 10:** Gegner lassen violette Kristalle fallen (Champions und Boss mehr, tiefere Zonen und höhere Schwierigkeit mehr wert). Im Lager unter den Runen („Zauberkunst“) werden damit Zauber verbessert: mehr Feuerbälle, längere Frostnova-Vereisung, mehr Kettenblitz-Sprünge, mehr Meteore und Lichtwellen.
+- **Essenz (Mana-XP) ab Level 10:** Gegner lassen violette Kristalle fallen (Champions und Boss mehr, tiefere Zonen und höhere Schwierigkeit mehr wert). Im Lager unter den Runen („Zauberkunst“) werden damit Zauber verbessert: mehr Feuerbälle, längere Frostnova-Vereisung, mehr Kettenblitz-Sprünge, mehr Meteore und Lichtwellen.
 - **Gegner skalieren nicht mit dem Helden:** Ihre Stärke hängt nur von Zone und Schwierigkeit ab – wer stark genug ist, marschiert durch die ersten Räume.
 - **Start in tieferen Zonen:** Hast du alle drei Räume einer Zone gesäubert, kannst du im Lager direkt dort beginnen.
 - **Schwierigkeit:** *Normal*, *Albtraum* und *Hölle* sind von Anfang an wählbar (mehr Leben/Schaden der Gegner, deutlich mehr XP und Essenz, bessere Runen).
@@ -63,7 +63,7 @@ Alle Stellschrauben stehen in [`js/data.js`](js/data.js):
 Zwei Werkzeuge helfen beim Nachjustieren (Node.js nötig):
 
 ```bash
-node tools/botsim.js levels      # wie weit kommt ein einfacher Bot auf Stufe X?
+node tools/botsim.js levels      # wie weit kommt ein einfacher Bot auf Level X?
 node tools/botsim.js grind       # komplette Progression bis zum ersten Boss-Sieg (Runs / Spielminuten)
 node tools/balance-sim.js        # grobes analytisches Modell
 ```
@@ -74,7 +74,7 @@ Mit den aktuellen Werten braucht der Bot für den ersten Boss-Sieg etwa 130 Runs
 ## Entwicklung
 
 Kein Build-Schritt für das Spiel selbst. Lokal starten, z. B. mit `python3 -m http.server` und `http://localhost:8000` öffnen (WebGL nötig).
-Mit `?dev` an der URL erscheint im Lager eine kleine Cheat-Leiste (XP, Stufen, Runen, Freischaltungen) zum Testen.
+Mit `?dev` an der URL erscheint im Lager eine kleine Cheat-Leiste (XP, Level, Runen, Freischaltungen) zum Testen.
 `tools/gallery.html` zeigt alle Gegner- und Kämpfer-Modelle nebeneinander (`?set=enemies|players|poses|gear`).
 
 three.js liegt als fertiges Bundle in `vendor/three.bundle.js` (three r171 + Bloom-Postprocessing als globales `THREE`).

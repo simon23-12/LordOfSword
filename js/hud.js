@@ -57,7 +57,7 @@ const Hud = (function () {
     } else {
       ICON[icon](c, x + 31, y + 31, '#3b3733');
       c.fillStyle = 'rgba(8,7,8,0.55)'; c.beginPath(); c.roundRect(x + 1, y + 1, sz - 2, sz - 2, 7); c.fill();
-      text(c, 'Stufe', x + 31, y + 25, 11, '#a99f8a', 'center', 'bold'); text(c, String(opts.lockLevel), x + 31, y + 41, 17, '#c9bd9c', 'center', 'bold');
+      text(c, 'Level', x + 31, y + 25, 11, '#a99f8a', 'center', 'bold'); text(c, String(opts.lockLevel), x + 31, y + 41, 17, '#c9bd9c', 'center', 'bold');
     }
     text(c, label, x + 31, y + 9, 11, '#d9cba0', 'center', 'bold');
   }
@@ -76,7 +76,7 @@ const Hud = (function () {
     orb(c, W - 104, 618, 70, hasMana ? p.mana / S.maxMana : 0, ['#9fd0ff', '#2f7fe8', '#0f2f6a'], now, hasMana ? `${Math.floor(p.mana)} / ${Math.round(S.maxMana)}` : '', !hasMana);
     if (!hasMana) {
       c.fillStyle = 'rgba(10,8,12,0.55)'; c.beginPath(); c.arc(W - 104, 618, 69, 0, TAU); c.fill();
-      if (sv.level < LOS.BAL.magicUnlockLevel) { text(c, 'Magie', W - 104, 604, 15, '#8d96ad', 'center', 'bold'); text(c, `ab Stufe ${LOS.BAL.magicUnlockLevel}`, W - 104, 626, 14, '#8d96ad', 'center', 'bold'); }
+      if (sv.level < LOS.BAL.magicUnlockLevel) { text(c, 'Magie', W - 104, 604, 15, '#8d96ad', 'center', 'bold'); text(c, `ab Level ${LOS.BAL.magicUnlockLevel}`, W - 104, 626, 14, '#8d96ad', 'center', 'bold'); }
       else { text(c, 'Keine', W - 104, 604, 14, '#8d96ad', 'center', 'bold'); text(c, 'Zauberpunkte', W - 104, 624, 14, '#8d96ad', 'center', 'bold'); }
     }
     // Kampf-Leiste: Hieb, Schild, Sprint
@@ -105,7 +105,7 @@ const Hud = (function () {
     const xg = c.createLinearGradient(xx, 0, xx + xw, 0); xg.addColorStop(0, '#6a3ab8'); xg.addColorStop(1, '#b07aff');
     c.fillStyle = xg; c.fillRect(xx, xy, xw * frac, 6);
     c.strokeStyle = '#6a5224'; c.lineWidth = 1; c.strokeRect(xx - 2.5, xy - 2.5, xw + 5, 11);
-    text(c, `Stufe ${sv.level}  ·  ${Math.floor(sv.xp)} / ${need} XP`, W / 2, xy - 12, 12, '#d9c8ff', 'center', 'bold');
+    text(c, `Level ${sv.level}  ·  ${Math.floor(sv.xp)} / ${need} XP`, W / 2, xy - 12, 12, '#d9c8ff', 'center', 'bold');
   }
 
   function drawInfo(c, R, now) {

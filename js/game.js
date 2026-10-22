@@ -300,7 +300,7 @@ const Game = (function () {
     }
     p.moving = !!(mx || my);
 
-    // --- Sprint (Shift, ab Stufe 10)
+    // --- Sprint (ab Level 10)
     if (S.sprint) {
       const shift = Keys.down('sprint');
       if (p.sprinting) {
@@ -538,7 +538,7 @@ const Game = (function () {
     burst(p.x, p.y, '#ffe08a', 46, 320, 1.2, 3.5, 0.3, 20, true);
     R.fx.push({ k: 'ring', x: p.x, y: p.y, z: 4, r0: 10, r1: 220, t: 0, dur: 0.9, color: '#ffe08a' });
     R.fx.push({ k: 'beam', x: p.x, y: p.y, t: 0, dur: 1.1, color: '#ffe08a', slim: true });
-    R.S = LOS.derive(sv.level, sv.pts, R.runes); // schaltet Sprint (Stufe 10) und Schild (Stufe 12) sofort frei
+    R.S = LOS.derive(sv.level, sv.pts, R.runes); // schaltet Sprint und Schild sofort frei
     const bodyUp = sv.level % BAL.bodyTierEvery === 0;
     let sub = '+1 Statuspunkt – im Lager verteilen';
     if (sv.level === BAL.magicUnlockLevel) sub = 'Die Magie erwacht! Zauberpunkte sind nun im Lager verfügbar.';
@@ -551,7 +551,7 @@ const Game = (function () {
       R.fx.push({ k: 'ring', x: p.x, y: p.y, z: 30, r0: 10, r1: 120, t: 0, dur: 1.1, color: '#fff2c0' });
       burst(p.x, p.y, '#fff2c0', 40, 220, 1.3, 3, -0.15, 30, true);
     }
-    banner('Stufe ' + sv.level, sub, '#ffe08a');
+    banner('Level ' + sv.level, sub, '#ffe08a');
   }
 
   /* ============================================================ Gegner-KI */

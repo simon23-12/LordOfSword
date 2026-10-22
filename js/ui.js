@@ -40,27 +40,27 @@ const App = (function () {
     const spr = S.sprint, nspr = nA.sprint;
     const atkEff = `Schwertschaden ${f0(S.dmg)} <em>→ ${f0(nA.dmg)}</em> · Hiebe/s ${f1(1 / S.interval)} <em>→ ${f1(1 / nA.interval)}</em><br>` + (spr
       ? `Sprint ${f1(spr.dur)} s <em>→ ${f1(nspr.dur)}</em> · Pause ${f0(spr.cd)} s <em>→ ${f0(nspr.cd)}</em>`
-      : `<span style="color:#8d96ad">Sprint ab Stufe ${BAL.sprintUnlockLevel} (${esc(Keys.labelFor('sprint'))})</span>`);
+      : `<span style="color:#8d96ad">Sprint ab Level ${BAL.sprintUnlockLevel} (${esc(Keys.labelFor('sprint'))})</span>`);
     const blk = S.block, nblk = nD.block;
     const defEff = `Schadensreduktion ${f1(S.dr * 100)}% <em>→ ${f1(nD.dr * 100)}%</em><br>` + (blk
       ? `Schild blockt ${f0(blk.red * 100)}% <em>→ ${f0(nblk.red * 100)}%</em>`
-      : `<span style="color:#8d96ad">Schild ab Stufe ${BAL.shieldUnlockLevel} (${esc(Keys.labelFor('block'))})</span>`);
+      : `<span style="color:#8d96ad">Schild ab Level ${BAL.shieldUnlockLevel} (${esc(Keys.labelFor('block'))})</span>`);
     const stats = `
       ${mk('atk', 'Angriff', atkEff)}
       ${mk('def', 'Verteidigung', defEff)}
       ${mk('vit', 'Leben', `Max. Leben ${f0(S.maxHp)} <em>→ ${f0(nV.maxHp)}</em><br>Lauftempo ${f0(S.move)} <em>→ ${f0(nV.move)}</em>`)}
-      ${magLocked ? mk('mag', 'Zauber', `Die Magie erwacht ab <b style="color:#ffe08a">Stufe ${BAL.magicUnlockLevel}</b>.`, `Die Magie erwacht ab <b style="color:#ffe08a">Stufe ${BAL.magicUnlockLevel}</b>.`)
+      ${magLocked ? mk('mag', 'Zauber', `Die Magie erwacht ab <b style="color:#ffe08a">Level ${BAL.magicUnlockLevel}</b>.`, `Die Magie erwacht ab <b style="color:#ffe08a">Level ${BAL.magicUnlockLevel}</b>.`)
         : `<div class="stat"><div class="nm">Zauber<b>${sv.pts.mag}</b></div><button class="btn" data-act="add" data-stat="mag" ${sv.unspent > 0 ? '' : 'disabled'} data-tip="${esc('<b>Zauber +1</b>Shift-Klick: +5 Punkte')}">+</button><div class="eff">${magEff}</div><div class="spell-chips">${chips}</div></div>`}`;
     const G = LOS.GEAR, tS = LOS.gearTier(sv.pts.atk), tD = LOS.gearTier(sv.pts.def), tB = LOS.bodyTier(sv.level);
     const nextS = LOS.gearNext(sv.pts.atk), nextD = LOS.gearNext(sv.pts.def);
     const gear = `<div class="gear">
       <div class="g"><b>Schwert</b>${G.sword[tS]}<br><small>${nextS ? `nächste Stufe bei ${nextS} Angriffspunkten` : 'voll aufgerüstet'}</small></div>
-      <div class="g"><b>Schild</b>${sv.level >= BAL.shieldUnlockLevel ? G.shield[tD] : 'ab Stufe ' + BAL.shieldUnlockLevel}<br><small>${nextD ? `nächste Stufe bei ${nextD} Verteidigungspunkten` : 'voll aufgerüstet'}</small></div>
-      <div class="g" style="grid-column:1/span 2"><b>Rüstung</b>${G.body[tB]}<small> · ${tB + 1 < G.body.length ? `neue Optik auf Stufe ${(tB + 1) * BAL.bodyTierEvery}` : 'höchste Stufe'}</small></div>
+      <div class="g"><b>Schild</b>${sv.level >= BAL.shieldUnlockLevel ? G.shield[tD] : 'ab Level ' + BAL.shieldUnlockLevel}<br><small>${nextD ? `nächste Stufe bei ${nextD} Verteidigungspunkten` : 'voll aufgerüstet'}</small></div>
+      <div class="g" style="grid-column:1/span 2"><b>Rüstung</b>${G.body[tB]}<small> · ${tB + 1 < G.body.length ? `neue Optik auf Level ${(tB + 1) * BAL.bodyTierEvery}` : 'höchste Stufe'}</small></div>
     </div>`;
     $('panel-hero').innerHTML = `
       <h3>Krieger</h3>
-      <div class="hero-head"><div class="lvl"><small>STUFE</small>${sv.level}</div><div class="pts">Statuspunkte<br><b>${sv.unspent}</b></div></div>
+      <div class="hero-head"><div class="lvl"><small>LEVEL</small>${sv.level}</div><div class="pts">Statuspunkte<br><b>${sv.unspent}</b></div></div>
       <div class="xpbar"><i style="width:${pct}%"></i></div>
       <div class="xptext"><span>${f0(sv.xp)} / ${need ? f0(need) : '—'} XP</span><span>${need ? 'Nächster Punkt in ' + f0(Math.max(0, need - sv.xp)) + ' XP' : 'Höchststufe'}</span></div>
       ${stats}
@@ -83,13 +83,13 @@ const App = (function () {
   function renderRunes() {
     const sv = Save.data, el = $('runes-box');
     if (sv.level < BAL.runeUnlockLevel) {
-      el.innerHTML = `<h3>Runen</h3><div class="locked-box">Uralte Runen schlummern in den Tiefen des Verlieses.<br><br>Ab <b>Stufe ${BAL.runeUnlockLevel}</b> kannst du sie finden und einsetzen.<br><br><span class="note">Noch ${BAL.runeUnlockLevel - sv.level} Stufe${BAL.runeUnlockLevel - sv.level > 1 ? 'n' : ''}.<br>Weitere Runenplätze: Stufe ${BAL.runeSlotLevels.slice(1).join(', ')}.</span></div>`;
+      el.innerHTML = `<h3>Runen</h3><div class="locked-box">Uralte Runen schlummern in den Tiefen des Verlieses.<br><br>Ab <b>Level ${BAL.runeUnlockLevel}</b> kannst du sie finden und einsetzen.<br><br><span class="note">Noch ${BAL.runeUnlockLevel - sv.level} Level.<br>Weitere Runenplätze: Level ${BAL.runeSlotLevels.slice(1).join(', ')}.</span></div>`;
       return;
     }
     const slots = LOS.runeSlots(sv.level);
     let sl = '';
     for (let i = 0; i < BAL.runeSlotLevels.length; i++) {
-      if (i >= slots) sl += `<div class="rune locked" data-tip="${esc('<b>Gesperrt</b>Wird auf Stufe ' + BAL.runeSlotLevels[i] + ' frei.')}">Stufe<br>${BAL.runeSlotLevels[i]}</div>`;
+      if (i >= slots) sl += `<div class="rune locked" data-tip="${esc('<b>Gesperrt</b>Wird auf Level ' + BAL.runeSlotLevels[i] + ' frei.')}">Level<br>${BAL.runeSlotLevels[i]}</div>`;
       else if (sv.equipped[i]) sl += `<div data-act="unequip" data-i="${i}">${runeHtml(sv.equipped[i])}</div>`;
       else sl += `<div class="rune empty">leer</div>`;
     }
@@ -128,7 +128,7 @@ const App = (function () {
       return `<div class="spup ${sv.pts.mag >= s.unlock ? '' : 'locked'}"><div class="sn" style="color:${s.color}" data-tip="${esc(tip)}">${s.name}<span class="pips">${pips}</span></div>${btn}<div class="se">${eff}</div></div>`;
     }).join('');
     el.innerHTML = `<div class="sub-h">Zauberkunst <span class="ess-total">✦ Essenz <b>${f0(sv.essence)}</b></span></div>${rows}
-      <div class="note" style="margin-top:2px">Essenz (violette Kristalle) lassen Gegner ab Stufe ${BAL.magicUnlockLevel} fallen – Champions und Bosse mehr.</div>`;
+      <div class="note" style="margin-top:2px">Essenz (violette Kristalle) lassen Gegner ab Level ${BAL.magicUnlockLevel} fallen – Champions und Bosse mehr.</div>`;
   }
 
   function renderStart() {
@@ -252,9 +252,9 @@ const App = (function () {
     $('help-box').innerHTML = `<b>Steuerung</b><br>
       Bewegen: ${k(L('up'))} ${k(L('left'))} ${k(L('down'))} ${k(L('right'))} (relativ zum Bildschirm) · ${k(L('moveto'))}: zum Mauszeiger laufen (halten = weiterlaufen)<br>
       <b>Schwert:</b> ${k(L('attack'))} – immer Richtung Mauszeiger (halten = weiter schlagen)<br>
-      <b>Schild</b> (ab Stufe ${BAL.shieldUnlockLevel}): ${k(L('block'))} halten – blockt Angriffe von vorn, ein Block im allerletzten Moment pariert ganz<br>
-      <b>Sprint</b> (ab Stufe ${BAL.sprintUnlockLevel}): ${k(L('sprint'))} halten beim Laufen – lange Abklingzeit, mit Angriffspunkten besser<br>
-      <b>Zauber</b> (ab Stufe ${BAL.magicUnlockLevel}): ${[1, 2, 3, 4, 5].map(i => k(L('spell' + i))).join(' ')} zum Mauszeiger<br>
+      <b>Schild</b> (ab Level ${BAL.shieldUnlockLevel}): ${k(L('block'))} halten – blockt Angriffe von vorn, ein Block im allerletzten Moment pariert ganz<br>
+      <b>Sprint</b> (ab Level ${BAL.sprintUnlockLevel}): ${k(L('sprint'))} halten beim Laufen – lange Abklingzeit, mit Angriffspunkten besser<br>
+      <b>Zauber</b> (ab Level ${BAL.magicUnlockLevel}): ${[1, 2, 3, 4, 5].map(i => k(L('spell' + i))).join(' ')} zum Mauszeiger<br>
       <b>Feuerstelle</b> (letzter Raum jeder Zone): ${k(L('interact'))} neben ihr, sobald der Raum gesäubert ist – die nächste Zone wird dein Startpunkt<br>
       ${k('Esc')} Pause · ${k(L('mute'))} Ton an/aus · ${k(L('fullscreen'))} Vollbild<br>
       Rote Kugeln heilen, blaue geben Mana, violette Kristalle (Essenz) verbessern Zauber.`;
@@ -294,7 +294,7 @@ const App = (function () {
   function showEnd(sum) {
     A.mode = 'end'; show('end', true); show('pause', false);
     const sv = Save.data;
-    const levelTxt = sum.lvEnd > sum.lvStart ? `<div class="good"><span>Stufenaufstieg</span><b>${sum.lvStart} → ${sum.lvEnd}</b></div>` : `<div><span>Stufe</span><b>${sum.lvEnd}</b></div>`;
+    const levelTxt = sum.lvEnd > sum.lvStart ? `<div class="good"><span>Levelaufstieg</span><b>${sum.lvStart} → ${sum.lvEnd}</b></div>` : `<div><span>Level</span><b>${sum.lvEnd}</b></div>`;
     const runes = sum.runes.map(r => runeHtml(r)).join('');
     let note;
     if (sum.won) note = `Malgorath, der Knochenfürst, ist gefallen! Doch die Tiefe birgt noch mehr …`;
@@ -405,7 +405,7 @@ const App = (function () {
           Save.importJSON(String(rd.result));
           if (A.settingsOpen) closeSettings();
           if (A.mode === 'camp') toCamp(); else toTitle();
-          alert('Spielstand geladen (Stufe ' + Save.data.level + ').');
+          alert('Spielstand geladen (Level ' + Save.data.level + ').');
         } catch (err) { alert('Die Datei ist kein gültiger Spielstand.'); }
       };
       rd.readAsText(f);
@@ -419,7 +419,7 @@ const App = (function () {
     const add = (label, fn) => { const x = document.createElement('button'); x.className = 'btn tiny'; x.textContent = label; x.onclick = () => { if (!Save.data) Save.create(); fn(); Save.write(); if (A.mode === 'camp') renderCamp(); else if (A.mode === 'title') toCamp(); }; b.appendChild(x); };
     const xp = n => { const sv = Save.data; sv.xp += n; while (sv.level < BAL.maxLevel && sv.xp >= LOS.xpNeed(sv.level)) { sv.xp -= LOS.xpNeed(sv.level); sv.level++; sv.unspent++; } };
     add('+1k XP', () => xp(1000)); add('+20k XP', () => xp(20000)); add('+300k XP', () => xp(300000));
-    add('Stufe 40', () => { const sv = Save.data; while (sv.level < 40) { sv.level++; sv.unspent++; } });
+    add('Level 40', () => { const sv = Save.data; while (sv.level < 40) { sv.level++; sv.unspent++; } });
     add('5 Runen', () => { for (let i = 0; i < 5; i++) Save.data.runes.push({ id: LOS.RUNES[Math.floor(Math.random() * LOS.RUNES.length)].id, tier: Math.floor(Math.random() * 3) }); });
     add('+200 Essenz', () => { Save.data.essence += 200; });
     add('Alle Feuer', () => { Save.data.fires = Array.from({ length: LOS.NUM_ROOMS - 2 }, (_, i) => i + 1); });
