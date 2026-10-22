@@ -255,7 +255,7 @@
       up: { label: 'Mehr Feuerbälle', max: 6, cost: 15, fx: l => ({ count: 1 + l, cd: 3.2 + 1.8 * l }), text: l => `${1 + l} ${l ? 'Feuerbälle' : 'Feuerball'} pro Wurf, Abklingzeit ${(3.2 + 1.8 * l).toLocaleString('de-DE', { maximumFractionDigits: 2 })} s` } },
     { id: 'nova',   name: 'Frostnova',    key: '2', unlock: 6,  cost: 32, cd: 3.5, base: 34,  color: '#79d6ff',
       desc: 'Eisring um dich: verlangsamt alle Gegner in der Nähe stark, richtet aber keinen Schaden an.',
-      up: { label: 'Längere Vereisung', max: 6, cost: 20, fx: l => ({ slowT: 3.5 + l }), text: l => `Verlangsamung ${(3.5 + l).toLocaleString('de-DE')} s` } },
+      up: { label: 'Stärkere Vereisung', max: 6, cost: 20, fx: l => ({ slowT: 3.5 + l, slowF: 0.5 + 0.05 * l }), text: l => `Gegner ${50 + 5 * l} % langsamer für ${(3.5 + l).toLocaleString('de-DE')} s` } },
     { id: 'chain',  name: 'Kettenblitz',  key: '3', unlock: 14, cost: 28, cd: 1.6, base: 46,  color: '#c9b8ff',
       desc: 'Springt von Gegner zu Gegner über.',
       up: { label: 'Mehr Sprünge', max: 6, cost: 25, fx: l => ({ jumps: 6 + 2 * l }), text: l => `Trifft bis zu ${6 + 2 * l} Gegner` } },

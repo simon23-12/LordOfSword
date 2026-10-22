@@ -1072,7 +1072,7 @@ const Game = (function () {
           if (e.dead || hyp(e.x - p.x, e.y - p.y) > 220 + e.r) continue;
           // kein Schaden, nur Verlangsamung (weckt aber schlafende Gegner)
           if (e.state === 'sleep') { e.state = 'awake'; wakePack(e.pack); }
-          e.slowT = fx.slowT; e.slowF = Math.max(e.slowF, 0.6);
+          e.slowT = fx.slowT; e.slowF = Math.max(e.slowF, fx.slowF);
           burst(e.x, e.y, sp.color, 6, 120, 0.5, 2.4, 0, e.r * 1.4, true);
         }
         break;
