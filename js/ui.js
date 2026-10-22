@@ -40,11 +40,11 @@ const App = (function () {
     const spr = S.sprint, nspr = nA.sprint;
     const atkEff = `Schwertschaden ${f0(S.dmg)} <em>→ ${f0(nA.dmg)}</em><br>` + (spr
       ? `Sprint ${f1(spr.dur)} s <em>→ ${f1(nspr.dur)}</em> · Pause ${f0(spr.cd)} s <em>→ ${f0(nspr.cd)}</em>`
-      : `<span style="color:#8d96ad">Sprint ab Stufe ${BAL.sprintUnlockLevel} (Shift)</span>`);
+      : `<span style="color:#8d96ad">Sprint ab Stufe ${BAL.sprintUnlockLevel} (${esc(Keys.labelFor('sprint'))})</span>`);
     const blk = S.block, nblk = nD.block;
     const defEff = `Schadensreduktion ${f1(S.dr * 100)}% <em>→ ${f1(nD.dr * 100)}%</em><br>` + (blk
       ? `Schild blockt ${f0(blk.red * 100)}% <em>→ ${f0(nblk.red * 100)}%</em>`
-      : `<span style="color:#8d96ad">Schild ab Stufe ${BAL.shieldUnlockLevel} (Q / K)</span>`);
+      : `<span style="color:#8d96ad">Schild ab Stufe ${BAL.shieldUnlockLevel} (${esc(Keys.labelFor('block'))})</span>`);
     const stats = `
       ${mk('atk', 'Angriff', atkEff)}
       ${mk('def', 'Verteidigung', defEff)}
