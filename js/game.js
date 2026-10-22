@@ -43,7 +43,7 @@ const Game = (function () {
       up: Object.assign({}, sv.spellUp), essGained: 0,
       time: 0, kills: 0, xpGained: 0, lvStart: sv.level, levelUps: 0, runesFound: [],
       room: startRoom, bestRoom: startRoom, bossActive: false, boss: null, bossDead: false,
-      cd: [0, 0, 0, 0, 0], sel: 0, over: null, overT: 0, banner: null, nextEid: 1, packId: 1,
+      cd: [0, 0, 0, 0, 0], cdMax: [0, 0, 0, 0, 0], sel: 0, over: null, overT: 0, banner: null, nextEid: 1, packId: 1,
       flash: 0, lastTile: -1, kill: 0, hint: 0, orbsTaken: 0, hitstop: 0,
     };
     R.cam.x = R.p.x; R.cam.y = R.p.y;
@@ -1132,7 +1132,7 @@ const Game = (function () {
       }
     }
     if (!ok) return;
-    p.mana -= sp.cost; R.cd[i] = sp.cd; R.sel = i; p.castT = 0.32; p.castColor = sp.color; p.castId = (p.castId || 0) + 1;
+    p.mana -= sp.cost; R.cd[i] = R.cdMax[i] = fx.cd || sp.cd; R.sel = i; p.castT = 0.32; p.castColor = sp.color; p.castId = (p.castId || 0) + 1;
     p.face = dirA; p.snapFace = true; // Held dreht sich sofort in Wurfrichtung (kein Schuss aus dem Rücken)
     burst(hx, hy, sp.color, 10, 120, 0.4, 2.6, 0, 30, true);
   }

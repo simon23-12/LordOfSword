@@ -111,7 +111,7 @@ const Hud = (function () {
     const by = 640, bx = W / 2 - (open.length * 68 - 6) / 2;
     open.forEach((i, n) => {
       const sp = LOS.SPELLS[i], x = bx + n * 68;
-      slot(c, x, by, sp.id, sp.color, kl('spell' + (i + 1)), { unlocked: true, active: R.sel === i, cdf: R.cd[i] > 0 ? R.cd[i] / sp.cd : 0 });
+      slot(c, x, by, sp.id, sp.color, kl('spell' + (i + 1)), { unlocked: true, active: R.sel === i, cdf: R.cd[i] > 0 ? Math.min(1, R.cd[i] / (R.cdMax[i] || sp.cd)) : 0 });
       if (p.mana < sp.cost) { c.fillStyle = 'rgba(20,40,90,0.55)'; c.beginPath(); c.roundRect(x + 1, by + 1, 60, 60, 7); c.fill(); }
       text(c, String(sp.cost), x + 51, by + 52, 12, '#9fd0ff', 'center', 'bold');
     });

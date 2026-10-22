@@ -193,7 +193,7 @@
   const SPELLS = [
     { id: 'fire',   name: 'Feuerball',    key: '1', unlock: 1,  cost: 14, cd: 0.8, base: 22,  color: '#ff8a2a',
       desc: 'Ein zielsuchender Feuerball, der am Ziel explodiert.',
-      up: { label: 'Mehr Feuerbälle', max: 6, cost: 15, fx: l => ({ count: 1 + l }), text: l => `${1 + l} ${l ? 'Feuerbälle' : 'Feuerball'} pro Wurf` } },
+      up: { label: 'Mehr Feuerbälle', max: 6, cost: 15, fx: l => ({ count: 1 + l, cd: 0.8 + 0.45 * l }), text: l => `${1 + l} ${l ? 'Feuerbälle' : 'Feuerball'} pro Wurf, Abklingzeit ${(0.8 + 0.45 * l).toLocaleString('de-DE', { maximumFractionDigits: 2 })} s` } },
     { id: 'nova',   name: 'Frostnova',    key: '2', unlock: 6,  cost: 32, cd: 3.5, base: 34,  color: '#79d6ff',
       desc: 'Eisring um dich: verlangsamt alle Gegner in der Nähe stark, richtet aber keinen Schaden an.',
       up: { label: 'Längere Vereisung', max: 6, cost: 20, fx: l => ({ slowT: 3.5 + l }), text: l => `Verlangsamung ${(3.5 + l).toLocaleString('de-DE')} s` } },
