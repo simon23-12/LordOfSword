@@ -200,11 +200,12 @@ const Game = (function () {
     if (got >= 1 && !quiet) addText(p.x, p.y, 44, '+' + Math.round(got), '#6fe27a', 15);
   }
 
-  /** Trifft ein Angriff aus Richtung (fx,fy) den Schild? (Frontbereich ±100°) */
+  /** Trifft ein Angriff aus Richtung (fx,fy) den Schild? (Blockwinkel wächst mit dem Level: 180° bis 360°) */
   function blockedFrom(fx, fy) {
     const p = R.p;
     if (!p.blocking || !R.S.block) return false;
-    return Math.abs(angDiff(Math.atan2(fy - p.y, fx - p.x), p.face)) < 1.75;
+    if (R.S.block.arc >= 360) return true;
+    return Math.abs(angDiff(Math.atan2(fy - p.y, fx - p.x), p.face)) <= R.S.block.arc / 2 * Math.PI / 180;
   }
 
   /** Reflexion (Block oder perfekte Parade): Nahkämpfer erleiden den Schaden selbst, Geschosse fliegen auf den Schützen zurück */

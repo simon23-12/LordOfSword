@@ -14,7 +14,7 @@ findest Runen und kommst mit jedem Versuch ein Stück tiefer ins Untergrund-Verl
 | `W A S D` / Pfeiltasten | bewegen (relativ zum Bildschirm, isometrisch) |
 | mittlere Maustaste | zum Mauszeiger laufen (halten = weiterlaufen) |
 | linke Maustaste oder `Leertaste` | Schwerthieb Richtung Mauszeiger (halten = weiter schlagen, rastet auf Gegner in Reichweite ein) |
-| rechte Maustaste oder `Q` halten | Schild (ab Level 5): blockt Angriffe von vorn, ein Block im letzten Moment pariert ganz |
+| rechte Maustaste oder `Q` halten | Schild (ab Level 5): blockt Angriffe aus Blickrichtung, ein Block im letzten Moment pariert ganz |
 | `Shift` halten beim Laufen | Sprint (ab Level 10) – am Anfang kurz und mit sehr langer Abklingzeit |
 | `1`–`5` | Zauber zum Mauszeiger wirken (der Feuerball ist zielsuchend) |
 | `Esc` | Pause (dort auch Spielstand-Export/-Import) |
@@ -33,7 +33,7 @@ Das Schwert trifft alle Gegner im Schwungbogen; Hiebe wechseln die Seite, haben 
 - **Werte:** Angriff, Verteidigung, Leben – und **Zauber**, der erst ab **Level 10** existiert. Zauber werden durch investierte Zauberpunkte freigeschaltet
   (Feuerball 1, Frostnova 6, Kettenblitz 14, Meteorsturm 26, Götterzorn 42) und werden mit jedem Punkt stärker. Der **Feuerball** sucht sich selbst ein Ziel.
 - **Sprint (ab Level 10)** gehört zum **Angriffs**-Wert: Jeder Angriffspunkt verlängert den Sprint, macht ihn schneller und verkürzt die (anfangs sehr lange) Abklingzeit.
-- **Schild (ab Level 5)** gehört zum **Verteidigungs**-Wert: Jeder Verteidigungspunkt erhöht den Blockwert (50 % bis fast 90 %). Dazu kommt **Reflexion**: Beim Blocken und Parieren besteht eine Chance (3 % je Verteidigungspunkt, max. 50 %), dass der Nahkämpfer den Schaden selbst erleidet bzw. Pfeile und andere Geschosse auf den Schützen zurückfliegen.
+- **Schild (ab Level 5)** gehört zum **Verteidigungs**-Wert: Jeder Verteidigungspunkt erhöht den Blockwert (50 % bis fast 90 %). Der **Blockwinkel** (gilt auch für Parade und Reflexion) startet bei 180° in Blickrichtung und wächst mit dem Level bis zum Rundumblock (360°) auf Level 60. Dazu kommt **Reflexion**: Beim Blocken und Parieren besteht eine Chance (3 % je Verteidigungspunkt, max. 50 %), dass der Nahkämpfer den Schaden selbst erleidet bzw. Pfeile und andere Geschosse auf den Schützen zurückfliegen.
 - **Ausrüstung ist nicht tauschbar, nur aufrüstbar:** Schwert (nach Angriffspunkten) und Schild (nach Verteidigungspunkten) bekommen in sechs Stufen ein neues Aussehen,
   und der Kämpfer selbst trägt **alle 10 Level eine neue Rüstung** (Rekrut → Soldat → … → Held der Tiefe). Im Lager siehst du den Fortschritt.
 - **Runen ab Level 15:** Gegner, Champions und Bosse lassen Runen fallen (4 Seltenheitsstufen, 15 Sorten). Runenplätze: Level 15, 30, 45, 60, 75.
