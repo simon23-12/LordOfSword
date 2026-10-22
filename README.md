@@ -36,6 +36,8 @@ Das Schwert trifft alle Gegner im Schwungbogen; Hiebe wechseln die Seite, haben 
   und der Kämpfer selbst trägt **alle 10 Stufen eine neue Rüstung** (Rekrut → Soldat → … → Held der Tiefe). Im Lager siehst du den Fortschritt.
 - **Runen ab Stufe 15:** Gegner, Champions und Bosse lassen Runen fallen (4 Seltenheitsstufen, 15 Sorten). Runenplätze: Stufe 15, 30, 45, 60, 75.
   Drei Runen einer Stufe lassen sich zu einer höheren veredeln.
+- **Essenz (Mana-XP) ab Stufe 11:** Gegner lassen violette Kristalle fallen (Champions und Boss mehr, tiefere Zonen und höhere Schwierigkeit mehr wert). Im Lager unter den Runen („Zauberkunst“) werden damit Zauber verbessert: mehr Feuerbälle, längere Frostnova-Vereisung, mehr Kettenblitz-Sprünge, mehr Meteore und Lichtwellen.
+- **Gegner skalieren nicht mit dem Helden:** Ihre Stärke hängt nur von Zone und Schwierigkeit ab – wer stark genug ist, marschiert durch die ersten Räume.
 - **Start in tieferen Zonen:** Hast du alle drei Räume einer Zone gesäubert, kannst du im Lager direkt dort beginnen.
 - **Nach dem Boss:** Schwierigkeit *Albtraum* und *Hölle* (mehr Leben/Schaden der Gegner, deutlich mehr XP, bessere Runen).
 - Der Spielstand liegt im `localStorage` des Browsers. **Export als JSON-Datei** (und Import) gibt es auf dem Titelbildschirm und im Menü *Ton & Hilfe*.

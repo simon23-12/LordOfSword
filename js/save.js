@@ -9,6 +9,7 @@ const Save = (function () {
       v: 1, level: 1, xp: 0, unspent: 0,
       pts: { atk: 0, def: 0, vit: 0, mag: 0 },
       runes: [], equipped: [],
+      essence: 0, spellUp: {},
       bestRoom: 0, zoneUnlock: 0, diffUnlocked: 0,
       difficulty: 0, startZone: 0,
       stats: { runs: 0, kills: 0, deaths: 0, clears: 0, time: 0, xp: 0, bossKills: 0 },
@@ -29,6 +30,10 @@ const Save = (function () {
     o.unspent = Math.max(0, o.level - 1 - spent);
     if (spent > o.level - 1) { o.pts = { atk: 0, def: 0, vit: 0, mag: 0 }; o.unspent = o.level - 1; }
     if (o.level < LOS.BAL.magicUnlockLevel && o.pts.mag > 0) { o.unspent += o.pts.mag; o.pts.mag = 0; }
+    o.essence = Math.max(0, Math.floor(+o.essence || 0));
+    const up = {};
+    for (const s of LOS.SPELLS) up[s.id] = Math.max(0, Math.min(s.up.max, ((d.spellUp || {})[s.id]) | 0));
+    o.spellUp = up;
     o.runes = (o.runes || []).filter(r => r && LOS.RUNE_BY_ID[r.id] && r.tier >= 0 && r.tier <= 3);
     o.equipped = (o.equipped || []).map(r => (r && LOS.RUNE_BY_ID[r.id] ? r : null));
     return o;

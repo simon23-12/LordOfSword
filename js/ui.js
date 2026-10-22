@@ -81,7 +81,7 @@ const App = (function () {
   }
 
   function renderRunes() {
-    const sv = Save.data, el = $('panel-runes');
+    const sv = Save.data, el = $('runes-box');
     if (sv.level < BAL.runeUnlockLevel) {
       el.innerHTML = `<h3>Runen</h3><div class="locked-box">Uralte Runen schlummern in den Tiefen des Verlieses.<br><br>Ab <b>Stufe ${BAL.runeUnlockLevel}</b> kannst du sie finden und einsetzen.<br><br><span class="note">Noch ${BAL.runeUnlockLevel - sv.level} Stufe${BAL.runeUnlockLevel - sv.level > 1 ? 'n' : ''}.<br>Weitere Runenplätze: Stufe ${BAL.runeSlotLevels.slice(1).join(', ')}.</span></div>`;
       return;
@@ -113,6 +113,24 @@ const App = (function () {
       <div class="detail">${detail}</div>`;
   }
 
+  /** Zauberkunst: Zauber mit Essenz (Mana-XP) verbessern */
+  function renderSpells() {
+    const sv = Save.data, el = $('spells-box');
+    if (sv.level < BAL.magicUnlockLevel) { el.innerHTML = ''; return; }
+    const rows = SPELLS.map((s, i) => {
+      const lv = sv.spellUp[s.id] | 0, u = s.up, cost = LOS.spellUpCost(s, lv);
+      const pips = Array.from({ length: u.max }, (_, k) => `<i class="${k < lv ? 'on' : ''}"></i>`).join('');
+      const can = cost !== null && sv.essence >= cost;
+      const eff = cost === null ? `${u.text(lv)} <em>(Maximum)</em>` : `${u.text(lv)} <em>→ ${u.text(lv + 1)}</em>`;
+      const tip = `<b style="color:${s.color}">${s.name} · ${u.label}</b>${s.desc}<br>Stufe ${lv} / ${u.max}` + (cost === null ? '' : `<br>Nächste Stufe: ${cost} Essenz`);
+      const btn = cost === null ? `<button class="btn" disabled>Max</button>`
+        : `<button class="btn ess" data-act="spellup" data-i="${i}" ${can ? '' : 'disabled'} data-tip="${esc(can ? '<b>Verbessern</b>Kostet ' + cost + ' Essenz' : '<b>Zu wenig Essenz</b>Du brauchst ' + cost + ' (hast ' + sv.essence + ')')}">✦ ${cost}</button>`;
+      return `<div class="spup ${sv.pts.mag >= s.unlock ? '' : 'locked'}"><div class="sn" style="color:${s.color}" data-tip="${esc(tip)}">${s.name}<span class="pips">${pips}</span></div>${btn}<div class="se">${eff}</div></div>`;
+    }).join('');
+    el.innerHTML = `<div class="sub-h">Zauberkunst <span class="ess-total">✦ Essenz <b>${f0(sv.essence)}</b></span></div>${rows}
+      <div class="note" style="margin-top:2px">Essenz (violette Kristalle) lassen Gegner ab Stufe ${BAL.magicUnlockLevel} fallen – Champions und Bosse mehr.</div>`;
+  }
+
   function renderStart() {
     const sv = Save.data;
     $('seg-diff').innerHTML = LOS.DIFFS.map((d, i) => `<button data-act="diff" data-i="${i}" class="${sv.difficulty === i ? 'on' : ''}" ${i > sv.diffUnlocked ? 'disabled' : ''} data-tip="${esc(i > sv.diffUnlocked ? '<b>Gesperrt</b>Besiege Malgorath auf ' + LOS.DIFFS[i - 1].name + '.' : `<b>${d.name}</b>Gegner ×${d.hp} Leben, ×${d.dmg} Schaden<br>Erfahrung ×${d.xp}, bessere Runen`)}">${d.name}</button>`).join('');
@@ -124,7 +142,7 @@ const App = (function () {
   }
 
   function renderCamp() {
-    renderHero(); renderRunes(); renderStart();
+    renderHero(); renderRunes(); renderSpells(); renderStart();
   }
 
   /* ------------------------------------------------------------ Aktionen */
@@ -142,6 +160,13 @@ const App = (function () {
     A.respecArmed = false;
     sv.pts = { atk: 0, def: 0, vit: 0, mag: 0 }; sv.unspent = sv.level - 1;
     Save.write(); Sound.sfx('click'); renderCamp();
+  }
+  function spellUp(i) {
+    const sv = Save.data, s = SPELLS[i]; if (!s) return;
+    const lv = sv.spellUp[s.id] | 0, cost = LOS.spellUpCost(s, lv);
+    if (cost === null || sv.essence < cost) return;
+    sv.essence -= cost; sv.spellUp[s.id] = lv + 1;
+    Save.write(); Sound.sfx('unlock'); hideTip(); renderSpells();
   }
   function equipSelected() {
     const sv = Save.data, r = A.selRune; if (!r) return;
@@ -254,6 +279,7 @@ const App = (function () {
         <div><span>Gegner besiegt</span><b>${sum.kills}</b></div>
         <div><span>Spielzeit</span><b>${fmtTime(sum.time)}</b></div>
         <div class="good"><span>Erfahrung</span><b>+${f0(sum.xp)} XP</b></div>
+        ${sum.ess ? `<div class="ess"><span>Essenz</span><b>+${f0(sum.ess)}</b></div>` : ''}
         ${levelTxt}
       </div>
       ${sum.runes.length ? `<div class="sub-h" style="text-align:center">Gefundene Runen</div><div class="sum-runes">${runes}</div>` : ''}
@@ -282,6 +308,7 @@ const App = (function () {
         case 'add': addPoints(t.dataset.stat, ev.shiftKey ? 5 : 1); break;
         case 'respec': respec(); break;
         case 'sel': A.selRune = sv.runes[+t.dataset.i]; Sound.sfx('click'); renderRunes(); break;
+        case 'spellup': spellUp(+t.dataset.i); break;
         case 'equip': equipSelected(); break;
         case 'unequip': unequip(+t.dataset.i); break;
         case 'fuse': fuse(); break;
@@ -339,6 +366,7 @@ const App = (function () {
     add('+1k XP', () => xp(1000)); add('+20k XP', () => xp(20000)); add('+300k XP', () => xp(300000));
     add('Stufe 40', () => { const sv = Save.data; while (sv.level < 40) { sv.level++; sv.unspent++; } });
     add('5 Runen', () => { for (let i = 0; i < 5; i++) Save.data.runes.push({ id: LOS.RUNES[Math.floor(Math.random() * LOS.RUNES.length)].id, tier: Math.floor(Math.random() * 3) }); });
+    add('+200 Essenz', () => { Save.data.essence += 200; });
     add('Alles frei', () => { Save.data.zoneUnlock = 4; Save.data.diffUnlocked = 2; });
     add('Reset', () => { Save.wipe(); Save.create(); });
   }

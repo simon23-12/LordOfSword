@@ -36,6 +36,9 @@
     // Drops
     orbChance: 0.045, orbHeal: 0.22, eliteOrbChance: 0.3, eliteOrbChance2: 0.18,
     manaOrbChance: 0.08,
+    // Essenz (Mana-XP): Währung für Zauber-Verbesserungen. Wert je Kugel = (Zone + 1) × Schwierigkeitsfaktor
+    essenceChance: 0.12, essenceElite: 3, essenceBoss: 10,
+    spellUpCostGrow: 1.7,
     runeChance: 0.012, runeChanceElite: 0.35,
     eliteChance: 0.07,
     roomsPerZone: 3,
@@ -55,9 +58,9 @@
 
   /* ------------------------------------------------------------ Schwierigkeit */
   const DIFFS = [
-    { name: 'Normal',   hp: 1,    dmg: 1,   xp: 1,   rune: 0 },
-    { name: 'Albtraum', hp: 3.6,  dmg: 2.3, xp: 3.4, rune: 1 },
-    { name: 'Hölle',    hp: 13,   dmg: 5.5, xp: 12,  rune: 2 },
+    { name: 'Normal',   hp: 1,    dmg: 1,   xp: 1,   rune: 0, ess: 1 },
+    { name: 'Albtraum', hp: 3.6,  dmg: 2.3, xp: 3.4, rune: 1, ess: 2.5 },
+    { name: 'Hölle',    hp: 13,   dmg: 5.5, xp: 12,  rune: 2, ess: 6 },
   ];
 
   /* ------------------------------------------------------------ Zonen & Gegner */
@@ -177,18 +180,26 @@
 
   /* ------------------------------------------------------------ Zauber */
   // unlock = nötige investierte Zauber-Punkte
+  // up = Verbesserung mit Essenz: max Stufen, Grundkosten, fx(l) = Wirkung auf Stufe l, text(l) = Beschreibung
   const SPELLS = [
     { id: 'fire',   name: 'Feuerball',    key: '1', unlock: 1,  cost: 14, cd: 0.8, base: 22,  color: '#ff8a2a',
-      desc: 'Ein zielsuchender Feuerball, der am Ziel explodiert.' },
+      desc: 'Ein zielsuchender Feuerball, der am Ziel explodiert.',
+      up: { label: 'Mehr Feuerbälle', max: 6, cost: 15, fx: l => ({ count: 1 + l }), text: l => `${1 + l} ${l ? 'Feuerbälle' : 'Feuerball'} pro Wurf` } },
     { id: 'nova',   name: 'Frostnova',    key: '2', unlock: 6,  cost: 22, cd: 3.5, base: 34,  color: '#79d6ff',
-      desc: 'Eisring um dich: Schaden und starke Verlangsamung.' },
+      desc: 'Eisring um dich: Schaden und starke Verlangsamung.',
+      up: { label: 'Längere Vereisung', max: 6, cost: 20, fx: l => ({ slowT: 3.5 + l, stun: 0.5 + 0.12 * l }), text: l => `${(3.5 + l).toLocaleString('de-DE')} s verlangsamt, ${(0.5 + 0.12 * l).toLocaleString('de-DE', { maximumFractionDigits: 2 })} s betäubt` } },
     { id: 'chain',  name: 'Kettenblitz',  key: '3', unlock: 14, cost: 28, cd: 1.6, base: 46,  color: '#c9b8ff',
-      desc: 'Springt auf bis zu 6 Gegner über.' },
+      desc: 'Springt von Gegner zu Gegner über.',
+      up: { label: 'Mehr Sprünge', max: 6, cost: 25, fx: l => ({ jumps: 6 + 2 * l }), text: l => `Trifft bis zu ${6 + 2 * l} Gegner` } },
     { id: 'meteor', name: 'Meteorsturm',  key: '4', unlock: 26, cost: 60, cd: 9,   base: 100, color: '#ff5a1f',
-      desc: 'Fünf Meteore schlagen rund um den Mauszeiger ein.' },
+      desc: 'Meteore schlagen rund um den Mauszeiger ein.',
+      up: { label: 'Mehr Meteore', max: 6, cost: 40, fx: l => ({ count: 5 + l }), text: l => `${5 + l} Meteore` } },
     { id: 'wrath',  name: 'Götterzorn',   key: '5', unlock: 42, cost: 110, cd: 22, base: 260, color: '#ffe27a',
-      desc: 'Vernichtende Lichtwellen reißen den ganzen Raum auseinander.' },
+      desc: 'Vernichtende Lichtwellen reißen den ganzen Raum auseinander.',
+      up: { label: 'Mehr Lichtwellen', max: 5, cost: 60, fx: l => ({ waves: 3 + l }), text: l => `${3 + l} Lichtwellen` } },
   ];
+  /** Essenz-Kosten für die nächste Stufe (lvl = aktuelle Stufe) oder null bei Maximum */
+  function spellUpCost(sp, lvl) { return lvl >= sp.up.max ? null : Math.round(sp.up.cost * Math.pow(BAL.spellUpCostGrow, lvl)); }
   function spellPower(base, mag, arcane) {
     return base * grow(BAL.spellGrow, mag) * (1 + (arcane || 0) / 100);
   }
@@ -255,7 +266,7 @@
   const api = {
     TILE, CAM, BAL, xpNeed, GEAR, gearTier, gearNext, bodyTier, DIFFS, ARCH, ZONES, BOSS, NUM_ROOMS, roomEnemyCount, pickMob, enemyStats,
     TIERS, RUNES, RUNE_BY_ID, runeValue, runeText, runeSlots, rollRuneTier,
-    SPELLS, spellPower, runeBonus, derive,
+    SPELLS, spellPower, spellUpCost, runeBonus, derive,
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.LOS = api;

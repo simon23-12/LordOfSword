@@ -352,6 +352,13 @@ const FX = (function () {
       const m = new THREE.MeshPhongMaterial({ color: col, emissive: col, emissiveIntensity: 0.9, shininess: 120, specular: new THREE.Color(hi) });
       body = new THREE.Mesh(sphGeo, m); body.scale.setScalar(6.5); mats.push(m);
       const halo = sprite(hi, 50, 0.65); body.add(halo); halo.scale.set(7, 7, 1); mats.push(halo.material);
+    } else if (k.type === 'essence') {
+      // Essenz: violetter Kristall mit weißem Kern, dreht sich
+      body = new THREE.Group(); spin = true;
+      const cm = new THREE.MeshPhongMaterial({ color: '#8f5cff', emissive: '#7a3cff', emissiveIntensity: 0.9, shininess: 140, specular: new THREE.Color('#e8d8ff'), flatShading: true });
+      const crys = new THREE.Mesh(new THREE.OctahedronGeometry(1, 0), cm); crys.scale.set(4.2, 7.4, 4.2); body.add(crys); mats.push(cm);
+      const core = new THREE.Mesh(sphGeo, new THREE.MeshBasicMaterial({ color: '#f3eaff' })); core.scale.setScalar(2); body.add(core); mats.push(core.material);
+      const halo = sprite('#c9a8ff', 32, 0.7); body.add(halo); mats.push(halo.material);
     } else {
       const tier = LOS.TIERS[k.rune.tier], def = LOS.RUNE_BY_ID[k.rune.id];
       body = new THREE.Group(); spin = true;
@@ -369,7 +376,7 @@ const FX = (function () {
       const bob = d.z > 0 ? 0 : Math.sin(now * 3 + d.x) * 2;
       g.position.set(d.x, 0, d.y);
       body.position.y = 9 + d.z + bob;
-      if (spin) { body.rotation.y = now * 1.8; body.position.y = 15 + d.z + bob; }
+      if (spin) { body.rotation.y = now * 1.8; body.position.y = (d.type === 'essence' ? 12 : 15) + d.z + bob; }
       shadow.scale.setScalar(Math.max(2, 6 - d.z * 0.03));
       v.light = d.type === 'rune' ? { x: d.x, y: d.y, h: 24, color: body.userData.tier, intensity: 26000 } : null;
     }, mats);

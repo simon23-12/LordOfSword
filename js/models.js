@@ -18,6 +18,9 @@ const Models = (function () {
     ico: new THREE.IcosahedronGeometry(1, 0),
     plane: new THREE.PlaneGeometry(1, 1),
     torus: new THREE.TorusGeometry(1, 0.1, 6, 24),
+    vcyl: new THREE.CylinderGeometry(1, 0.72, 1, 16, 1),   // oben breit, unten schmal (Brust, Oberarm)
+    tcyl: new THREE.CylinderGeometry(0.78, 1, 1, 16, 1),   // oben schmal, unten breit
+    hemi: new THREE.SphereGeometry(1, 16, 8, 0, TAU, 0, PI / 2), // Halbkugel (Helm, Schulterplatte)
     bow: new THREE.TorusGeometry(1, 0.07, 5, 14, PI),
   };
 
@@ -365,7 +368,7 @@ const Models = (function () {
   /* ============================================================ KÄMPFER */
   // Eine neue Optik alle 10 Stufen (Index = Stufe / 10)
   const BODY = [
-    { armor: '#6b5440', cloth: '#5a4a3a', trim: null, cape: null, helm: 'cap', pauld: 0, boots: '#3a2c20' },
+    { armor: '#6b5440', cloth: '#8c7656', trim: null, cape: null, helm: 'cap', pauld: 0, boots: '#3a2c20' },
     { armor: '#8a8f98', cloth: '#4a4038', trim: '#7a1218', cape: '#7a1218', capeLen: 20, helm: 'open', pauld: 1 },
     { armor: '#aab2bf', cloth: '#3d4a66', trim: '#a02028', cape: '#7a1218', capeLen: 24, helm: 'full', pauld: 2, greaves: true },
     { armor: '#c4ccd8', cloth: '#2a2a38', trim: '#d9b94a', cape: '#9a1620', capeLen: 28, helm: 'full', plume: '#b3151b', pauld: 2, greaves: true, emblem: true },
@@ -403,19 +406,32 @@ const Models = (function () {
   const heaterRimGeo = new THREE.ExtrudeGeometry(heaterShape, { depth: 0.2, bevelEnabled: true, bevelSize: 0.1, bevelThickness: 0.05, bevelSegments: 1 });
   heaterRimGeo.translate(0, 0, -0.1); heaterRimGeo.rotateY(-PI / 2);
 
+  /** Klinge als abgeschrägtes Blatt mit Spitze (Länge entlang -y, Breite entlang z, Dicke entlang x) */
+  const bladeGeos = {};
+  function bladeGeo(len, w) {
+    const key = len + '|' + w;
+    if (bladeGeos[key]) return bladeGeos[key];
+    const h = w / 2, sh = len - Math.max(7, w * 1.5), shape = new THREE.Shape();
+    shape.moveTo(-h, 0); shape.lineTo(-h, -sh); shape.lineTo(0, -len); shape.lineTo(h, -sh); shape.lineTo(h, 0); shape.lineTo(-h, 0);
+    const geo = new THREE.ExtrudeGeometry(shape, { depth: 0.8, bevelEnabled: true, bevelSize: 0.4, bevelThickness: 0.6, bevelSegments: 1 });
+    geo.translate(0, 0, -0.4); geo.rotateY(PI / 2);
+    return (bladeGeos[key] = geo);
+  }
   function buildSword(parent, tier) {
     const S = SWORD[tier], g = G(parent, 0, 0, 0);
     const blade = M(S.blade, { t: 'p', sh: 120, sp: '#fff', em: S.glow, ei: S.glow ? 0.55 : 1 });
-    P(g, 'cyl', M('#3a2a1c'), [1.1, 5, 1.1], [0, 0, 0]);
-    P(g, 'sph', M(S.guard, { t: 'p', sh: 80 }), [1.7, 1.7, 1.7], [0, 3.2, 0]);
-    P(g, 'box', M(S.guard, { t: 'p', sh: 80 }), [1.4, 1.5, 11], [0, -3, 0]);
-    if (S.wing) for (const s of [-1, 1]) P(g, 'cone', M(S.guard, { t: 'p', sh: 80 }), [1.0, 4, 1.0], [0, -4.3, s * 5.6], [0, 0, 0.0]);
-    if (S.gem) P(g, 'sph', eye(S.gem, 2), [1.3, 1.3, 1.3], [0.9, -3, 0]);
+    const gm = M(S.guard, { t: 'p', sh: 80, sm: true });
+    P(g, 'cyl', M('#3a2a1c', { sm: true }), [1.1, 5, 1.1], [0, 0, 0]);                       // Griff
+    for (const y of [-1.3, 0.1, 1.5]) P(g, 'cyl', M('#1c1410'), [1.25, 0.45, 1.25], [0, y, 0]); // Wicklung
+    P(g, 'sph', gm, [1.8, 1.8, 1.8], [0, 3.3, 0]);                                             // Knauf
+    P(g, 'box', gm, [1.5, 1.4, 10.5], [0, -3.1, 0]);                                           // Parierstange
+    for (const s of [-1, 1]) P(g, 'sph', gm, [1.0, 1.0, 1.0], [0, -3.1, s * 5.4]);
+    if (S.wing) for (const s of [-1, 1]) P(g, 'cone', gm, [1.0, 4, 1.0], [0, -4.4, s * 5.6]);
+    if (S.gem) P(g, 'sph', eye(S.gem, 2), [1.3, 1.3, 1.3], [1.0, -3.1, 0]);
     const bl = S.len;
-    P(g, 'box', blade, [1.7, bl, S.w], [0, -3.8 - bl / 2, 0]);
-    P(g, 'cone', blade, [S.w * 0.72, 6, 0.45], [0, -3.8 - bl - 3, 0], [PI, PI / 4, 0]).scale.set(S.w * 0.52, 6, 0.45);
-    if (S.fuller) P(g, 'box', M('#59606c'), [0.95, bl * 0.8, 0.6], [0, -3.8 - bl * 0.5, 0]);
-    if (S.rune) for (let i = 0; i < 5; i++) P(g, 'box', eye(S.rune, 2.2), [1.05, 2.2, 0.5], [0, -9 - i * (bl - 10) / 5, 0]);
+    const bm = new THREE.Mesh(bladeGeo(bl, S.w * 0.8), blade); bm.position.set(0, -3.8, 0); bm.castShadow = true; g.add(bm);
+    if (S.fuller) P(g, 'box', M('#5d6470', { t: 'p', sh: 40 }), [2.15, bl * 0.72, 0.7], [0, -3.8 - bl * 0.42, 0]);
+    if (S.rune) for (let i = 0; i < 5; i++) P(g, 'box', eye(S.rune, 2.2), [2.3, 2.2, 0.5], [0, -9 - i * (bl - 10) / 5, 0]);
     g.userData.tip = -3.8 - bl;
     return g;
   }
@@ -439,82 +455,132 @@ const Models = (function () {
   }
 
   const FLASH_DEF = {};
+  /** Kämpfer: schlanke Silhouette mit verjüngten Gliedern, gewölbten Platten und Details (Gürtel, Tassetten, Kniebuckel, Handschuhe) */
   function player(tb, ts, tsh, shieldOn) {
     const B = BODY[tb], g = new THREE.Group();
     const rig = { g, tb, ts, tsh, shieldOn, mv: 0, faceCur: 0, hurtMats: null };
-    const armor = M(B.armor, { t: 'p', sh: 40, sp: '#242424' }), cloth = M(B.cloth), skin = M('#d8b08c', { sm: true });
-    const trim = B.trim ? M(B.trim, B.glowTrim ? { t: 'p', sh: 90, em: B.trim, ei: 0.9 } : { t: 'p', sh: 90, sp: '#cca' }) : armor;
-    const boot = M(B.boots || '#2c2724');
-    const legM = tb === 0 ? M('#4a3f35') : M('#3a3f4a');
-    // Beine
+    const armor = M(B.armor, { t: 'p', sh: 70, sp: '#6a6a72', sm: true }), cloth = M(B.cloth, { sm: true }), skin = M('#d8b08c', { sm: true });
+    const trim = B.trim ? M(B.trim, B.glowTrim ? { t: 'p', sh: 90, em: B.trim, ei: 0.9 } : { t: 'p', sh: 100, sp: '#ddc', sm: true }) : armor;
+    const leather = M(tb === 0 ? '#6a4a30' : '#3a2a20', { sm: true });
+    const gold = M('#d9b94a', { t: 'p', sh: 100, sp: '#fff3b0', sm: true });
+    const boot = M(B.boots || '#2c2724', { sm: true });
+    const legM = tb === 0 ? M('#5e5042', { sm: true }) : M('#33384a', { sm: true });
+    const plated = B.pauld > 0;
+    // Beine: Oberschenkel, Knie, Schienbein, Stiefel
     rig.legL = G(g, 0, 19, -4.0); rig.legR = G(g, 0, 19, 4.0);
     for (const lg of [rig.legL, rig.legR]) {
-      L(lg, 19, 5.8, legM);
-      if (B.greaves) { P(lg, 'cyl', armor, [3.7, 9, 3.7], [0, -14, 0]); P(lg, 'sph', trim, [3.3, 3.3, 3.3], [1.5, -8, 0]); }
-      P(lg, 'box', boot, [9.5, 5, 7], [1.3, -17.5, 0]);
+      P(lg, 'vcyl', legM, [3.5, 10, 3.5], [0, -5, 0]);
+      P(lg, 'sph', B.greaves ? armor : legM, [3.0, 3.0, 3.1], [0.5, -9.8, 0]);
+      if (B.greaves) { P(lg, 'sph', trim, [1.9, 2.2, 2.4], [2.4, -9.8, 0]); P(lg, 'vcyl', armor, [2.9, 8.2, 2.9], [0.2, -13.6, 0]); P(lg, 'box', trim, [0.5, 6.5, 0.9], [2.9, -13.6, 0]); }
+      else P(lg, 'vcyl', legM, [2.8, 8, 2.8], [0, -13.6, 0]);
+      P(lg, 'cyl', tb === 0 ? boot : trim, [3.2, 2.4, 3.2], [0, -16.0, 0]);
+      P(lg, 'sph', boot, [4.6, 2.5, 3.4], [1.7, -17.6, 0]);
+      P(lg, 'box', boot, [3.6, 1.0, 3.6], [-0.9, -18.5, 0]);
     }
-    // Rumpf
+    // Rumpf: Taille, Gürtel, verjüngter Brustpanzer, Kragen
     const torso = rig.torso = G(g, 0, 19, 0);
-    P(torso, 'box', cloth, [8, 7, 14], [0, 2, 0]);
-    P(torso, 'box', armor, [9, 13.5, 14.8], [0, 10.8, 0]);
-    P(torso, 'box', trim, [9.4, 2.2, 15.4], [0, 4.6, 0]);
-    P(torso, 'box', M('#d9b94a', { t: 'p' }), [1.4, 2.8, 3.2], [4.8, 4.6, 0]);
-    if (B.emblem) P(torso, 'oct', B.glowTrim ? eye(B.trim, 1.8) : trim, [0.9, 3.4, 3.0], [4.7, 11.5, 0]);
-    if (tb >= 1) for (const s of [-1, 1]) P(torso, 'box', trim, [0.6, 8, 1.4], [4.55, 11, s * 4.2]);
-    // Schulterpanzer
-    const shoulders = [];
-    for (const s of [-1, 1]) {
-      const sh = G(torso, 0, 16, s * 9.0); shoulders.push(sh);
-      if (B.pauld >= 1) P(sh, 'sph', armor, [3.5 + B.pauld * 0.55, 2.6 + B.pauld * 0.4, 3.7 + B.pauld * 0.55], [0, 0.8, 0]);
-      if (B.pauld >= 2) P(sh, 'cyl', trim, [4.6 + B.pauld * 0.4, 0.8, 4.8 + B.pauld * 0.4], [0, 2.4, 0]);
-      if (B.pauld >= 3) for (let i = 0; i < 3; i++) P(sh, 'cone', trim, [0.8, 4.2, 0.8], [-1 + i * 1.5, 4.6, s * 1.2 * (i - 1) * 0.4], [0, 0, (i - 1) * -0.35]);
+    P(torso, 'tcyl', cloth, [4.6, 5.6, 6.4], [0, 2.4, 0]);
+    P(torso, 'cyl', leather, [4.9, 1.5, 6.8], [0, 4.7, 0]);
+    P(torso, 'box', gold, [0.9, 2.2, 2.7], [4.8, 4.7, 0]);
+    if (plated) {
+      P(torso, 'vcyl', armor, [5.2, 11.8, 7.9], [0, 11.4, 0]);
+      P(torso, 'tcyl', armor, [5.0, 1.6, 6.9], [0, 6.3, 0]);
+      P(torso, 'tcyl', trim, [5.1, 0.7, 7.0], [0, 7.4, 0]);
+      for (const s of [-1, 1]) P(torso, 'sph', armor, [2.9, 3.8, 3.9], [3.0, 12.6, s * 3.1]); // gewölbte Brustplatten
+      P(torso, 'box', trim, [0.7, 9.4, 0.9], [5.1, 11.0, 0]);
+      P(torso, 'cyl', trim, [3.7, 1.6, 5.2], [0, 17.2, 0]);
+    } else { // Rekrut: Lederwams mit Riemen
+      P(torso, 'vcyl', cloth, [5.0, 11.6, 7.5], [0, 11.3, 0]);
+      for (const s of [-1, 1]) P(torso, 'box', leather, [0.5, 14, 1.2], [5.0, 11.4, s * 2.2], [0, 0, s * 0.42]);
+      P(torso, 'cyl', leather, [3.6, 1.4, 5.0], [0, 17.0, 0]);
     }
-    // Arme
-    const mkArm = (s, sleeve) => {
-      const sh = G(torso, 0, 16, s * 9.0);
-      L(sh, 14, 4.4, sleeve); P(sh, 'cyl', B.pauld ? armor : sleeve, [2.7, 6, 2.7], [0, -9.5, 0]); P(sh, 'sph', B.pauld ? armor : skin, [2.7, 2.7, 2.7], [0, -14, 0]);
-      const hand = G(sh, 0, -14, 0); return { sh, hand };
+    if (B.emblem) P(torso, 'oct', B.glowTrim ? eye(B.trim, 1.8) : trim, [0.9, 3.0, 2.6], [5.3, 11.6, 0]);
+    if (tb >= 1) { // Tassetten und Waffenrock
+      for (const s of [-1, 1]) {
+        P(torso, 'box', armor, [1.0, 6.2, 3.5], [3.5, -1.6, s * 3.7], [0, 0, 0.1]);
+        P(torso, 'box', armor, [3.2, 5.2, 0.9], [0.3, -1.2, s * 6.5]);
+      }
+      P(torso, 'box', cloth, [0.6, 8.4, 4.6], [4.7, -1.4, 0]);
+      P(torso, 'box', trim, [0.7, 0.7, 4.8], [4.8, -5.4, 0]);
+    }
+    // Arme: Schulter, Oberarm, Ellbogen, Unterarm, Handschuh
+    const mkArm = (s) => {
+      const sh = G(torso, 0, 16, s * 8.7);
+      P(sh, 'vcyl', cloth, [3.0, 7.6, 3.0], [0, -3.7, 0]);
+      P(sh, 'sph', plated ? armor : cloth, [2.5, 2.5, 2.5], [0, -7.6, 0]);
+      P(sh, 'vcyl', plated ? armor : cloth, [2.5, 6.8, 2.5], [0, -10.9, 0]);
+      if (plated) P(sh, 'cyl', trim, [2.7, 0.9, 2.7], [0, -13.4, 0]);
+      P(sh, 'sph', plated ? armor : skin, [2.3, 2.6, 2.3], [0, -14.6, 0]);
+      if (B.pauld >= 1) {
+        const pa = 0.35 * B.pauld;
+        P(sh, 'hemi', armor, [3.9 + pa, 2.9 + pa * 0.8, 4.3 + pa], [0, -0.3, 0]);
+        P(sh, 'tcyl', armor, [4.0 + pa, 1.3, 4.4 + pa], [0, -1.3, 0]);
+        P(sh, 'tcyl', trim, [3.6 + pa, 0.8, 4.0 + pa], [0, -2.2, 0]);
+      }
+      if (B.pauld >= 2) P(sh, 'torus', trim, [4.1 + 0.35 * B.pauld, 4.1 + 0.35 * B.pauld, 6], [0, -0.35, 0], [PI / 2, 0, 0]);
+      if (B.pauld >= 3) for (let i = 0; i < 3; i++) P(sh, 'cone', trim, [0.8, 4.0, 0.8], [-0.9 + i * 1.2, 3.9, s * (i - 1) * 1.1], [s * (i - 1) * 0.3, 0, (i - 1) * -0.3]);
+      return { sh, hand: G(sh, 0, -14, 0) };
     };
-    const R_ = mkArm(1, cloth), L_ = mkArm(-1, cloth);
+    const R_ = mkArm(1), L_ = mkArm(-1);
     rig.shR = R_.sh; rig.handR = R_.hand; rig.shL = L_.sh; rig.handL = L_.hand;
-    // Kopf
+    // Kopf: Hals, Gesicht, Helm
     const head = rig.head = G(torso, 0, 17.2, 0);
-    P(head, 'sph', skin, [5.2, 5.6, 5.0], [0, 3.8, 0]);
+    P(head, 'cyl', skin, [1.9, 2.6, 1.9], [0, 0.6, 0]);
+    P(head, 'sph', skin, [3.9, 4.4, 3.7], [0, 4.6, 0]);
     const closed = B.helm === 'full';
     if (!closed) {
-      P(head, 'box', M('#2a1a10'), [1.2, 2.2, 8], [-3.6, 6, 0]); // Haar
-      for (const s of [-1, 1]) P(head, 'sph', M('#1a1210'), [0.7, 0.9, 0.7], [5.3, 4.8, s * 2.1]);
+      const hair = M(tb === 0 ? '#3a2616' : '#2a1a10', { sm: true });
+      P(head, 'box', M('#b88a68', { sm: true }), [0.9, 1.2, 0.9], [3.9, 4.0, 0]);                    // Nase
+      P(head, 'box', hair, [0.8, 0.5, 3.8], [3.5, 5.9, 0]);                                         // Brauen
+      for (const s of [-1, 1]) P(head, 'sph', M('#15100e'), [0.6, 0.7, 0.6], [3.5, 5.0, s * 1.5]); // Augen
+      P(head, 'box', M('#a8765a', { sm: true }), [0.5, 0.35, 1.6], [3.6, 2.6, 0]);                  // Mund
+      P(head, 'sph', hair, [3.5, 3.0, 3.8], [-0.9, 6.4, 0]);                                        // Haar
+      P(head, 'sph', hair, [2.2, 3.4, 2.0], [-3.4, 3.6, 0]);                                        // Zopf
     }
-    if (B.helm === 'cap') { P(head, 'sph', M('#5a3a22'), [5.6, 3.3, 5.6], [0, 7.0, 0]); P(head, 'box', M('#4a2e1a'), [3.6, 0.8, 10], [1.4, 5.8, 0]); }
-    else if (B.helm === 'open') { P(head, 'sph', armor, [5.8, 4.2, 5.6], [0, 6.6, 0]); P(head, 'box', armor, [0.8, 4.6, 1.4], [5.3, 4.6, 0]); P(head, 'cyl', trim, [5.9, 0.9, 5.7], [0, 5.1, 0]); }
-    else {
-      P(head, 'sph', armor, [6.0, 6.5, 5.8], [0, 4.3, 0]);
-      P(head, 'box', M('#0b0a0e'), [0.9, 1.5, 8], [5.3, 4.3, 0]);
-      P(head, 'box', B.glowEyes ? eye(B.glowEyes, 2.4) : M('#0b0a0e'), [0.8, 0.7, 7], [5.6, 4.3, 0]);
-      P(head, 'box', trim, [0.7, 5.5, 1.2], [5.6, 4.8, 0]);
-      P(head, 'cyl', trim, [6.3, 0.8, 6.1], [0, 2.2, 0]);
-      if (B.plume) { const pl = G(head, -1, 9.5, 0); rig.plume = pl; P(pl, 'cone', M(B.plume), [1.2, 7, 3.0], [-3.2, 0.5, 0], [0, 0, 1.3]); }
+    if (B.helm === 'cap') {
+      P(head, 'hemi', M('#7a5530', { sm: true }), [4.3, 3.2, 4.2], [0, 6.0, 0]);
+      P(head, 'cyl', M('#4a2e1a', { sm: true }), [4.5, 0.7, 4.4], [0, 6.0, 0]);
+    } else if (B.helm === 'open') {
+      P(head, 'hemi', armor, [4.6, 4.0, 4.5], [0, 5.7, 0]);
+      P(head, 'cyl', trim, [4.7, 0.9, 4.6], [0, 5.7, 0]);
+      P(head, 'box', armor, [0.7, 4.2, 1.0], [4.3, 3.9, 0]);
+      for (const s of [-1, 1]) P(head, 'box', armor, [1.4, 3.4, 0.8], [2.2, 3.7, s * 3.7]);
+    } else {
+      P(head, 'sph', armor, [4.8, 5.1, 4.6], [0, 4.9, 0]);
+      P(head, 'tcyl', armor, [4.1, 3.2, 4.0], [0.3, 1.9, 0]);
+      P(head, 'box', M('#0b0a0e'), [0.9, 1.3, 5.8], [4.6, 5.0, 0]);
+      P(head, 'box', B.glowEyes ? eye(B.glowEyes, 2.4) : M('#0b0a0e'), [0.8, 0.6, 5.4], [4.85, 5.0, 0]);
+      for (const s of [-1, 1]) for (let i = 0; i < 2; i++) P(head, 'box', M('#0b0a0e'), [0.6, 0.5, 0.5], [4.3, 2.6 - i * 1.0, s * 1.4]);
+      P(head, 'box', trim, [0.7, 6.0, 1.1], [4.8, 4.9, 0]);
+      P(head, 'cyl', trim, [4.7, 0.8, 4.5], [0, 3.0, 0]);
+      P(head, 'box', trim, [8.4, 1.1, 0.9], [0, 9.9, 0]);
+      if (B.plume) {
+        const pl = G(head, -1, 9.6, 0); rig.plume = pl; const pm = M(B.plume, { sm: true, ds: true });
+        P(pl, 'cone', pm, [1.2, 5, 2.6], [-1.2, 1.0, 0], [0, 0, 1.0]); P(pl, 'cone', pm, [1.1, 5.5, 2.3], [-4.2, -0.4, 0], [0, 0, 1.45]); P(pl, 'cone', pm, [0.9, 4.5, 1.9], [-7.2, -2.4, 0], [0, 0, 1.85]);
+      }
     }
-    if (B.horns) for (const s of [-1, 1]) { P(head, 'cone', M('#e8dcc0', { t: 'p' }), [1.7, 9, 1.7], [0, 8.5, s * 7.2], [s * 0.7, 0, 0.0]); P(head, 'cone', M('#e8dcc0', { t: 'p' }), [1.1, 4.5, 1.1], [0.5, 12.5, s * 10.5], [s * 0.2, 0, 0]); }
-    if (B.wings) for (const s of [-1, 1]) for (let i = 0; i < 3; i++) P(head, 'box', M(tb >= 8 ? '#fff4c8' : '#e8edf5', { t: 'p', sh: 80, em: tb >= 8 ? '#ffd24a' : undefined, ei: 0.5 }), [0.8, 1.2, 6 - i * 1.3], [-1 - i * 1.6, 6.4 + i * 1.1, s * (6.4 + i * 1.8)], [s * 0.3, 0, 0.5 - i * 0.1]);
+    const horn = M('#e8dcc0', { t: 'p', sm: true });
+    if (B.horns) for (const s of [-1, 1]) { P(head, 'cone', horn, [1.6, 8.5, 1.6], [0, 8.2, s * 5.4], [s * 0.7, 0, 0.0]); P(head, 'cone', horn, [1.0, 4.5, 1.0], [0.5, 12.2, s * 8.6], [s * 0.2, 0, 0]); }
+    if (B.wings) for (const s of [-1, 1]) for (let i = 0; i < 3; i++) P(head, 'box', M(tb >= 8 ? '#fff4c8' : '#e8edf5', { t: 'p', sh: 80, em: tb >= 8 ? '#ffd24a' : undefined, ei: 0.5 }), [0.8, 1.2, 6 - i * 1.3], [-1 - i * 1.6, 6.4 + i * 1.1, s * (5.4 + i * 1.8)], [s * 0.3, 0, 0.5 - i * 0.1]);
     if (B.crown) {
-      const cr = G(head, 0, 9.5, 0); const gold = M('#ffd24a', { t: 'p', sh: 100, em: '#ffb020', ei: 0.4 });
-      P(cr, 'cyl', gold, [5.2, 1.4, 5.2], [0, 0, 0]);
-      for (let i = 0; i < 7; i++) { const a = i / 7 * TAU; P(cr, 'cone', gold, [0.9, 3.8, 0.9], [Math.cos(a) * 4.8, 2.3, Math.sin(a) * 4.8]); }
-      P(cr, 'sph', eye('#ff4a3a', 2), [1.1, 1.1, 1.1], [5.3, 0.4, 0]);
+      const cr = G(head, 0, 10, 0); const cg = M('#ffd24a', { t: 'p', sh: 100, em: '#ffb020', ei: 0.4 });
+      P(cr, 'cyl', cg, [4.4, 1.4, 4.4], [0, 0, 0]);
+      for (let i = 0; i < 7; i++) { const a = i / 7 * TAU; P(cr, 'cone', cg, [0.9, 3.8, 0.9], [Math.cos(a) * 4.1, 2.3, Math.sin(a) * 4.1]); }
+      P(cr, 'sph', eye('#ff4a3a', 2), [1.1, 1.1, 1.1], [4.5, 0.4, 0]);
     }
     if (B.halo) { const h = P(head, 'torus', glowM('#fff2b0', 2.2), [6.5, 6.5, 6.5], [0, 16.5, 0], [PI / 2 + 0.25, 0, 0]); rig.halo = h; h.castShadow = false; h.scale.set(6.5, 6.5, 6.5); }
-    // Umhang
+    // Umhang mit Kragen
     if (B.cape) {
-      const cp = rig.cape = G(torso, -4.8, 15.8, 0);
+      const cp = rig.cape = G(torso, -5.2, 15.8, 0);
       const cm = B.flameCape ? M(B.cape, { ds: true, em: '#ff9a2a', ei: 0.8 }) : M(B.cape, { ds: true });
-      P(cp, 'box', cm, [0.9, B.capeLen, 13.5 + tb], [0, -B.capeLen / 2, 0]);
+      P(cp, 'box', cm, [0.9, B.capeLen, 13 + tb * 0.6], [0, -B.capeLen / 2, 0]);
       const cp2 = rig.cape2 = G(cp, 0, -B.capeLen, 0);
-      P(cp2, 'box', cm, [0.9, B.capeLen * 0.35, 12 + tb], [0, -B.capeLen * 0.175, 0]);
+      P(cp2, 'box', cm, [0.9, B.capeLen * 0.35, 11.5 + tb * 0.6], [0, -B.capeLen * 0.175, 0]);
       if (B.emblem) P(cp, 'box', M(B.trim, { t: 'p' }), [0.5, 5, 4], [-0.6, -B.capeLen * 0.4, 0]);
+      P(torso, 'tcyl', cm, [3.6, 2.4, 6.8], [-1.2, 17.0, 0]);
     }
     // Ring um die Hüfte (Lord/Held)
-    if (B.ring) { const rg = rig.ring = P(torso, 'torus', glowM(B.ring, 1.8), [13, 13, 13], [0, 5, 0], [PI / 2, 0, 0]); rg.castShadow = false; }
+    if (B.ring) { const rg = rig.ring = P(torso, 'torus', glowM(B.ring, 1.8), [12, 12, 12], [0, 5, 0], [PI / 2, 0, 0]); rg.castShadow = false; }
     // Schwert
     const swordG = rig.sword = G(rig.handR, 0, 0, 0);
     rig.swordMesh = buildSword(swordG, ts);

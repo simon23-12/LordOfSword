@@ -38,6 +38,7 @@ const Game = (function () {
         lunge: 0, sprintT: 0, sprintCd: 0, sprintUsed: 0, sprinting: false, blocking: false, blockT: 0, blockFlash: 0, parryFlash: 0, dust: 0 },
       enemies: [], eproj: [], pproj: [], fx: [], tele: [], timers: [], parts: [], texts: [], pickups: [],
       cam: { x: 0, y: 0, shake: 0 },
+      up: Object.assign({}, sv.spellUp), essGained: 0,
       time: 0, kills: 0, xpGained: 0, lvStart: sv.level, levelUps: 0, runesFound: [],
       room: startRoom, bestRoom: startRoom, bossActive: false, boss: null, bossDead: false,
       cd: [0, 0, 0, 0, 0], sel: 0, over: null, overT: 0, banner: null, nextEid: 1, packId: 1,
@@ -479,6 +480,11 @@ const Game = (function () {
       if (Math.random() < BAL.orbChance * f) dropPickup('hp', e.x, e.y);
       if (S.maxMana > 0 && Math.random() < BAL.manaOrbChance * f) dropPickup('mana', e.x, e.y);
     }
+    if (sv.level >= BAL.magicUnlockLevel) {
+      const val = Math.max(1, Math.round((e.zone + 1) * d.ess));
+      if (e.elite) for (let k = 0; k < BAL.essenceElite; k++) dropPickup('essence', e.x, e.y, null, val);
+      else if (Math.random() < BAL.essenceChance * f) dropPickup('essence', e.x, e.y, null, val);
+    }
     if (sv.level >= BAL.runeUnlockLevel) {
       const ch = (e.elite ? BAL.runeChanceElite : BAL.runeChance) * f * (1 + d.rune * 0.6);
       if (Math.random() < ch) dropRune(e.zone, e.elite ? 1 : 0, e.x, e.y);
@@ -491,9 +497,9 @@ const Game = (function () {
     dropPickup('rune', x, y, { id: def.id, tier });
   }
 
-  function dropPickup(type, x, y, rune) {
+  function dropPickup(type, x, y, rune, val) {
     const a = Math.random() * 6.28, s = rr(40, 120);
-    R.pickups.push({ type, x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, z: 14, vz: rr(120, 220), t: 0, rune: rune || null, life: type === 'rune' ? 300 : 45 });
+    R.pickups.push({ type, x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, z: 14, vz: rr(120, 220), t: 0, rune: rune || null, val: val || 0, life: type === 'rune' ? 300 : 45 });
   }
 
   function gainXp(base, src) {
@@ -774,6 +780,7 @@ const Game = (function () {
     R.fx.push({ k: 'beam', x: e.x, y: e.y, t: 0, dur: 1.6, color: '#ffd9a0', slim: true });
     for (let k = 0; k < 3; k++) dropRune(4, 2, e.x + rr(-30, 30), e.y + rr(-20, 20));
     for (let k = 0; k < 3; k++) dropPickup('hp', e.x, e.y);
+    if (Save.data.level >= BAL.magicUnlockLevel) for (let k = 0; k < BAL.essenceBoss; k++) dropPickup('essence', e.x, e.y, null, Math.max(1, Math.round(5 * LOS.DIFFS[R.diff].ess)));
     // Diener sterben mit
     for (const o of R.enemies) if (!o.dead && o !== e && o.pack === e.pack && o.minion) { o.hp = 0; o.dead = true; o.deadT = 0; burst(o.x, o.y, '#d8d2c0', 10, 180, 0.7, 3, 1, 14); }
     const sv = Save.data;
@@ -917,6 +924,11 @@ const Game = (function () {
       if (d < 26 && k.t > 0.3 && !p.dead) {
         if (k.type === 'hp') { healPlayer(R.S.maxHp * BAL.orbHeal); Sound.sfx('orb', 0.1); k.life = 0; burst(k.x, k.y, '#ff5a5a', 12, 130, 0.5, 2.6, -0.1, 16, true); }
         else if (k.type === 'mana') { R.p.mana = Math.min(R.S.maxMana, R.p.mana + R.S.maxMana * 0.25); Sound.sfx('mana', 0.1); k.life = 0; burst(k.x, k.y, '#5aa8ff', 12, 130, 0.5, 2.6, -0.1, 16, true); }
+        else if (k.type === 'essence') {
+          const sv = Save.data; sv.essence = (sv.essence | 0) + k.val; R.essGained += k.val; k.life = 0;
+          Sound.sfx('mana', 0.1); addText(p.x, p.y, 54, `+${k.val} Essenz`, '#c9a8ff', 14, 1.1);
+          burst(k.x, k.y, '#b78bff', 14, 150, 0.6, 2.6, -0.1, 16, true);
+        }
         else if (k.type === 'rune') {
           if (Save.data.runes.length >= 60) { if (!k.warned) { k.warned = true; addText(p.x, p.y, 60, 'Runenbeutel voll!', '#ff8a6a', 16); } }
           else {
@@ -944,36 +956,42 @@ const Game = (function () {
     if (p.blocking) return;
     const wx = Input.wx, wy = Input.wy;
     const power = LOS.spellPower(sp.base, S.mag, S.rb.arcane);
+    const fx = sp.up.fx((R.up && R.up[sp.id]) | 0); // Verbesserungen aus dem Lager
     const dirA = Math.atan2(wy - p.y, wx - p.x);
     const hx = p.x + Math.cos(dirA) * 18, hy = p.y + Math.sin(dirA) * 18;
     let ok = true;
     switch (sp.id) {
       case 'fire': {
         // Erstes Ziel: Gegner nahe am Mauszeiger bzw. in Zielrichtung (mit Sichtlinie); unterwegs sucht der Ball weiter
-        let tgt = null, bs = 1e9;
+        const cands = [];
         for (const e of R.enemies) {
           if (e.dead) continue;
           const ea = Math.atan2(e.y - p.y, e.x - p.x), da = Math.abs(angDiff(ea, dirA));
           const dc = hyp(e.x - wx, e.y - wy);
           if (hyp(e.x - p.x, e.y - p.y) > 720 || (dc > 260 && da > 0.5)) continue;
-          const sc = dc + da * 200;
-          if (sc < bs && R.map.los(p.x, p.y, e.x, e.y)) { bs = sc; tgt = e; }
+          if (R.map.los(p.x, p.y, e.x, e.y)) cands.push({ e, sc: dc + da * 200 });
         }
-        R.pproj.push({ x: hx, y: hy, z: 28, vx: Math.cos(dirA) * 520, vy: Math.sin(dirA) * 520, r: 10, life: 1.8, dmg: power, color: sp.color,
-          spell: 'fire', homing: true, target: tgt, turn: 6.5, maxSp: 640 });
+        cands.sort((a, b) => a.sc - b.sc);
+        // mehrere Feuerbälle fächern sich leicht auf und nehmen verschiedene Ziele, sonst das beste Ziel
+        for (let n = 0; n < fx.count; n++) {
+          const a = dirA + (n - (fx.count - 1) / 2) * 0.14;
+          const tgt = cands.length ? cands[n % cands.length].e : null;
+          R.pproj.push({ x: hx, y: hy, z: 28, vx: Math.cos(a) * 520, vy: Math.sin(a) * 520, r: 10, life: 1.8, dmg: power, color: sp.color,
+            spell: 'fire', homing: true, target: tgt, turn: 6.5, maxSp: 640 });
+        }
         burst(hx, hy, sp.color, 12, 160, 0.4, 3, 0, 28, true);
         Sound.sfx('fire'); break;
       }
       case 'nova': {
         R.fx.push({ k: 'ring', x: p.x, y: p.y, z: 3, r0: 10, r1: 220, t: 0, dur: 0.6, color: sp.color });
-        R.fx.push({ k: 'frost', x: p.x, y: p.y, r: 220, t: 0, dur: 1.6, color: sp.color, seed: Math.random() * 100 });
+        R.fx.push({ k: 'frost', x: p.x, y: p.y, r: 220, t: 0, dur: 1.6 + (fx.slowT - 3.5) * 0.25, color: sp.color, seed: Math.random() * 100 });
         burst(p.x, p.y, sp.color, 40, 320, 0.9, 3, -0.1, 12, true);
         burst(p.x, p.y, '#ffffff', 22, 200, 1.1, 2.4, -0.15, 20, true);
         Sound.sfx('nova'); shake(3);
         for (const e of R.enemies) {
           if (e.dead || hyp(e.x - p.x, e.y - p.y) > 220 + e.r) continue;
-          damageEnemy(e, power * rr(0.92, 1.08), { color: sp.color, stun: e.boss ? 0 : 0.5 });
-          e.slowT = 3.5; e.slowF = Math.max(e.slowF, 0.6);
+          damageEnemy(e, power * rr(0.92, 1.08), { color: sp.color, stun: e.boss ? 0 : fx.stun });
+          e.slowT = fx.slowT; e.slowF = Math.max(e.slowF, 0.6);
         }
         break;
       }
@@ -987,14 +1005,14 @@ const Game = (function () {
         }
         if (!first) { ok = false; if (R.hint <= 0) { addText(p.x, p.y, 60, 'Kein Ziel in Sicht', '#aab', 14); R.hint = 0.8; } break; }
         const hit = new Set(); let cur = first, from = { x: p.x, y: p.y, z: 34 }, dmg = power;
-        for (let n = 0; n < 6 && cur; n++) {
+        for (let n = 0; n < fx.jumps && cur; n++) {
           hit.add(cur);
           const to = { x: cur.x, y: cur.y, z: cur.r * 1.7 };
           R.fx.push({ k: 'bolt', a: from, b: to, t: 0, dur: 0.38, color: sp.color, seed: Math.random() * 100 });
           damageEnemy(cur, dmg * rr(0.92, 1.08), { color: sp.color, stun: 0.3 });
           burst(cur.x, cur.y, sp.color, 10, 190, 0.4, 2.6, 0.3, to.z, true);
           burst(cur.x, cur.y, '#ffffff', 4, 120, 0.25, 2, 0, to.z, true);
-          from = to; dmg *= 0.88;
+          from = to; dmg *= 0.9;
           let nxt = null, nd = 210;
           for (const e of R.enemies) { if (e.dead || hit.has(e)) continue; const dd = hyp(e.x - cur.x, e.y - cur.y); if (dd < nd) { nd = dd; nxt = e; } }
           cur = nxt;
@@ -1004,8 +1022,8 @@ const Game = (function () {
       }
       case 'meteor': {
         Sound.sfx('meteor');
-        for (let n = 0; n < 5; n++) {
-          const a = Math.random() * 6.28, rad = n === 0 ? 0 : rr(40, 150);
+        for (let n = 0; n < fx.count; n++) {
+          const a = Math.random() * 6.28, rad = n === 0 ? 0 : rr(40, 150 + n * 6);
           const tx = wx + Math.cos(a) * rad, ty = wy + Math.sin(a) * rad;
           const delay = 0.5 + n * 0.26;
           R.tele.push({ kind: 'circle', x: tx, y: ty, r: 92, t: 0, dur: delay, dmg: 0, friendly: true, fn: () => {
@@ -1020,7 +1038,7 @@ const Game = (function () {
         Sound.sfx('wrath');
         shake(6);
         R.fx.push({ k: 'beam', x: p.x, y: p.y, t: 0, dur: 1.2, color: sp.color, slim: true });
-        for (let n = 0; n < 3; n++) {
+        for (let n = 0; n < fx.waves; n++) {
           R.timers.push({ t: 0.35 + n * 0.6, fn: () => {
             if (!R || R.over) return;
             shake(7);
@@ -1064,7 +1082,7 @@ const Game = (function () {
     if (newBest) sv.bestRoom = R.bestRoom;
     R.summary = {
       won: how === 'win', room: R.bestRoom + 1, bestRoom: sv.bestRoom + 1, newBest,
-      xp: R.xpGained, kills: R.kills, time: R.time, lvStart: R.lvStart, lvEnd: sv.level,
+      xp: R.xpGained, ess: R.essGained, kills: R.kills, time: R.time, lvStart: R.lvStart, lvEnd: sv.level,
       runes: R.runesFound.slice(), diff: R.diff, quit,
       unlockedDiff: how === 'win' && sv.diffUnlocked > R.diff ? sv.diffUnlocked : 0,
     };

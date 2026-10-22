@@ -107,7 +107,7 @@ const Hud = (function () {
     const room = R.map.rooms[R.room], z = ZONES[room.zone];
     text(c, z.name, 24, 28, 20, z.accent, 'left', 'bold');
     text(c, `Raum ${R.room + 1} / ${LOS.NUM_ROOMS}  ·  ${LOS.DIFFS[R.diff].name}`, 24, 52, 14, '#cbbf9c', 'left', 'normal');
-    text(c, `Besiegt ${R.kills}   ·   +${Math.floor(R.xpGained)} XP`, 24, 72, 14, '#cbbf9c', 'left', 'normal');
+    text(c, `Besiegt ${R.kills}   ·   +${Math.floor(R.xpGained)} XP` + (R.essGained ? `   ·   +${R.essGained} Essenz` : ''), 24, 72, 14, '#cbbf9c', 'left', 'normal');
     if (sv.unspent > 0) text(c, `${sv.unspent} Statuspunkt${sv.unspent > 1 ? 'e' : ''} verfügbar`, 24, 94, 14, '#ffe08a', 'left', 'bold');
     if (R.boss && R.bossActive && !R.boss.dead) {
       const b = R.boss, bw = 640, bxx = W / 2 - bw / 2, byy = 36;
