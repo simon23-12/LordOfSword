@@ -967,7 +967,7 @@ const Game = (function () {
   function castSpell(i) {
     if (!R || R.over || R.p.dead || i < 0 || i > 4) return;
     const sp = LOS.SPELLS[i], p = R.p, S = R.S;
-    if (S.mag < sp.unlock) { if (R.hint <= 0) { addText(p.x, p.y, 60, `${sp.name}: ${sp.unlock} Zauberpunkte nötig`, '#9aa', 14); R.hint = 1; } return; }
+    if (S.mag < sp.unlock) { if (R.hint <= 0 && S.maxMana > 0) { addText(p.x, p.y, 60, 'Noch nicht freigeschaltet', '#9aa', 14); R.hint = 1; } return; }
     if (R.cd[i] > 0) return;
     if (p.mana < sp.cost) { if (R.hint <= 0) { addText(p.x, p.y, 60, 'Zu wenig Mana', '#6aa8ff', 15); R.hint = 0.8; } return; }
     if (p.blocking) return;

@@ -36,15 +36,17 @@ const App = (function () {
     const magEff = S.maxMana
       ? `Mana ${f0(S.maxMana)} <em>→ ${f0(nM.maxMana)}</em> · Zauberstärke ×${f1(LOS.spellPower(1, S.mag, 0))} <em>→ ×${f1(LOS.spellPower(1, nM.mag, 0))}</em>`
       : `Erster Punkt öffnet das Mana <em>→ ${f0(nM.maxMana)}</em>`;
-    const chips = SPELLS.map(s => `<span class="chip ${sv.pts.mag >= s.unlock ? 'on' : ''}" data-tip="${esc(`<b style="color:${s.color}">${s.name}</b>${s.desc}<br>Kosten ${s.cost} Mana · Taste ${s.key}`)}">${s.name} · ${s.unlock}</span>`).join('');
+    // nur freigeschaltete Zauber zeigen
+    const chips = SPELLS.filter(s => sv.pts.mag >= s.unlock).map(s => `<span class="chip on" data-tip="${esc(`<b style="color:${s.color}">${s.name}</b>${s.desc}<br>Kosten ${s.cost} Mana · Taste ${Keys.labelFor('spell' + s.key)}`)}">${s.name}</span>`).join('')
+      + `<span class="note" style="width:100%">${SPELLS.some(s => sv.pts.mag < s.unlock) ? 'Mehr Punkte schalten neue Zauber frei.' : ''}</span>`;
     const spr = S.sprint, nspr = nA.sprint;
-    const atkEff = `Schwertschaden ${f0(S.dmg)} <em>→ ${f0(nA.dmg)}</em> · Hiebe/s ${f1(1 / S.interval)} <em>→ ${f1(1 / nA.interval)}</em><br>` + (spr
-      ? `Sprint ${f1(spr.dur)} s <em>→ ${f1(nspr.dur)}</em> · Pause ${f0(spr.cd)} s <em>→ ${f0(nspr.cd)}</em>`
-      : `<span style="color:#8d96ad">Sprint ab Level ${BAL.sprintUnlockLevel} (${esc(Keys.labelFor('sprint'))})</span>`);
+    const atkEff = `Schwertschaden ${f0(S.dmg)} <em>→ ${f0(nA.dmg)}</em> · Hiebe/s ${f1(1 / S.interval)} <em>→ ${f1(1 / nA.interval)}</em>` + (spr
+      ? `<br>Sprint ${f1(spr.dur)} s <em>→ ${f1(nspr.dur)}</em> · Pause ${f0(spr.cd)} s <em>→ ${f0(nspr.cd)}</em>`
+      : '');
     const blk = S.block, nblk = nD.block;
-    const defEff = `Schadensreduktion ${f1(S.dr * 100)}% <em>→ ${f1(nD.dr * 100)}%</em><br>` + (blk
-      ? `Schild blockt ${f0(blk.red * 100)}% <em>→ ${f0(nblk.red * 100)}%</em>`
-      : `<span style="color:#8d96ad">Schild ab Level ${BAL.shieldUnlockLevel} (${esc(Keys.labelFor('block'))})</span>`);
+    const defEff = `Schadensreduktion ${f1(S.dr * 100)}% <em>→ ${f1(nD.dr * 100)}%</em>` + (blk
+      ? `<br>Schild blockt ${f0(blk.red * 100)}% <em>→ ${f0(nblk.red * 100)}%</em>`
+      : '');
     const stats = `
       ${mk('atk', 'Angriff', atkEff)}
       ${mk('def', 'Verteidigung', defEff)}
@@ -54,8 +56,8 @@ const App = (function () {
     const G = LOS.GEAR, tS = LOS.gearTier(sv.pts.atk), tD = LOS.gearTier(sv.pts.def), tB = LOS.bodyTier(sv.level);
     const nextS = LOS.gearNext(sv.pts.atk), nextD = LOS.gearNext(sv.pts.def);
     const gear = `<div class="gear">
-      <div class="g"><b>Schwert</b>${G.sword[tS]}<br><small>${nextS ? `nächste Stufe bei ${nextS} Angriffspunkten` : 'voll aufgerüstet'}</small></div>
-      <div class="g"><b>Schild</b>${sv.level >= BAL.shieldUnlockLevel ? G.shield[tD] : 'ab Level ' + BAL.shieldUnlockLevel}<br><small>${nextD ? `nächste Stufe bei ${nextD} Verteidigungspunkten` : 'voll aufgerüstet'}</small></div>
+      <div class="g" ${S.block ? '' : 'style="grid-column:1/span 2"'}><b>Schwert</b>${G.sword[tS]}<br><small>${nextS ? `nächste Stufe bei ${nextS} Angriffspunkten` : 'voll aufgerüstet'}</small></div>
+      ${S.block ? `<div class="g"><b>Schild</b>${G.shield[tD]}<br><small>${nextD ? `nächste Stufe bei ${nextD} Verteidigungspunkten` : 'voll aufgerüstet'}</small></div>` : ''}
       <div class="g" style="grid-column:1/span 2"><b>Rüstung</b>${G.body[tB]}<small> · ${tB + 1 < G.body.length ? `neue Optik auf Level ${(tB + 1) * BAL.bodyTierEvery}` : 'höchste Stufe'}</small></div>
     </div>`;
     $('panel-hero').innerHTML = `
@@ -118,6 +120,7 @@ const App = (function () {
     const sv = Save.data, el = $('spells-box');
     if (sv.level < BAL.magicUnlockLevel) { el.innerHTML = ''; return; }
     const rows = SPELLS.map((s, i) => {
+      if (sv.pts.mag < s.unlock) return ''; // noch nicht freigeschaltet: nichts verraten
       const lv = sv.spellUp[s.id] | 0, u = s.up, cost = LOS.spellUpCost(s, lv);
       const pips = Array.from({ length: u.max }, (_, k) => `<i class="${k < lv ? 'on' : ''}"></i>`).join('');
       const can = cost !== null && sv.essence >= cost;
@@ -125,7 +128,7 @@ const App = (function () {
       const tip = `<b style="color:${s.color}">${s.name} · ${u.label}</b>${s.desc}<br>Stufe ${lv} / ${u.max}` + (cost === null ? '' : `<br>Nächste Stufe: ${cost} Essenz`);
       const btn = cost === null ? `<button class="btn" disabled>Max</button>`
         : `<button class="btn ess" data-act="spellup" data-i="${i}" ${can ? '' : 'disabled'} data-tip="${esc(can ? '<b>Verbessern</b>Kostet ' + cost + ' Essenz' : '<b>Zu wenig Essenz</b>Du brauchst ' + cost + ' (hast ' + sv.essence + ')')}">✦ ${cost}</button>`;
-      return `<div class="spup ${sv.pts.mag >= s.unlock ? '' : 'locked'}"><div class="sn" style="color:${s.color}" data-tip="${esc(tip)}">${s.name}<span class="pips">${pips}</span></div>${btn}<div class="se">${eff}</div></div>`;
+      return `<div class="spup"><div class="sn" style="color:${s.color}" data-tip="${esc(tip)}">${s.name}<span class="pips">${pips}</span></div>${btn}<div class="se">${eff}</div></div>`;
     }).join('');
     el.innerHTML = `<div class="sub-h">Zauberkunst <span class="ess-total">✦ Essenz <b>${f0(sv.essence)}</b></span></div>${rows}
       <div class="note" style="margin-top:2px">Essenz (violette Kristalle) lassen Gegner ab Level ${BAL.magicUnlockLevel} fallen – Champions und Bosse mehr.</div>`;
@@ -248,16 +251,16 @@ const App = (function () {
 
   /** Steuerungshilfe passend zur aktuellen Tastenbelegung */
   function renderHelp() {
-    const L = Keys.labelFor, k = t => `<kbd>${esc(t)}</kbd>`;
+    const L = Keys.labelFor, k = t => `<kbd>${esc(t)}</kbd>`, lvl = Save.data ? Save.data.level : 1;
     $('help-box').innerHTML = `<b>Steuerung</b><br>
       Bewegen: ${k(L('up'))} ${k(L('left'))} ${k(L('down'))} ${k(L('right'))} (relativ zum Bildschirm) · ${k(L('moveto'))}: zum Mauszeiger laufen (halten = weiterlaufen)<br>
       <b>Schwert:</b> ${k(L('attack'))} – immer Richtung Mauszeiger (halten = weiter schlagen)<br>
-      <b>Schild</b> (ab Level ${BAL.shieldUnlockLevel}): ${k(L('block'))} halten – blockt Angriffe von vorn, ein Block im allerletzten Moment pariert ganz<br>
-      <b>Sprint</b> (ab Level ${BAL.sprintUnlockLevel}): ${k(L('sprint'))} halten beim Laufen – lange Abklingzeit, mit Angriffspunkten besser<br>
-      <b>Zauber</b> (ab Level ${BAL.magicUnlockLevel}): ${[1, 2, 3, 4, 5].map(i => k(L('spell' + i))).join(' ')} zum Mauszeiger<br>
+      ${lvl >= BAL.shieldUnlockLevel ? `<b>Schild:</b> ${k(L('block'))} halten – blockt Angriffe von vorn, ein Block im allerletzten Moment pariert ganz<br>` : ''}
+      ${lvl >= BAL.sprintUnlockLevel ? `<b>Sprint:</b> ${k(L('sprint'))} halten beim Laufen – lange Abklingzeit, mit Angriffspunkten besser<br>` : ''}
+      ${lvl >= BAL.magicUnlockLevel ? `<b>Zauber:</b> ${[1, 2, 3, 4, 5].map(i => k(L('spell' + i))).join(' ')} zum Mauszeiger<br>` : ''}
       <b>Feuerstelle</b> (letzter Raum jeder Zone): ${k(L('interact'))} neben ihr, sobald der Raum gesäubert ist – die nächste Zone wird dein Startpunkt<br>
       ${k('Esc')} Pause · ${k(L('mute'))} Ton an/aus · ${k(L('fullscreen'))} Vollbild<br>
-      Rote Kugeln heilen, blaue geben Mana, violette Kristalle (Essenz) verbessern Zauber.`;
+      Rote Kugeln heilen${lvl >= BAL.magicUnlockLevel ? ', blaue geben Mana, violette Kristalle (Essenz) verbessern Zauber' : ''}.`;
   }
 
   /* ------------------------------------------------------------ Tastenbelegung */

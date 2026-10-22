@@ -12,6 +12,17 @@ const Hud = (function () {
     if (stroke !== false) { c.lineWidth = Math.max(2, size / 6); c.strokeStyle = 'rgba(0,0,0,0.85)'; c.lineJoin = 'round'; c.strokeText(s, x, y); }
     c.fillStyle = col; c.fillText(s, x, y);
   }
+  /** Text in Zeilen bis maxW umbrechen */
+  function wrap(c, s, size, maxW, weight) {
+    c.font = `${weight || 'bold'} ${size}px ${FONT}`;
+    const lines = []; let cur = '';
+    for (const w of String(s).split(' ')) {
+      const t = cur ? cur + ' ' + w : w;
+      if (cur && c.measureText(t).width > maxW) { lines.push(cur); cur = w; } else cur = t;
+    }
+    if (cur) lines.push(cur);
+    return lines;
+  }
   function circ(c, x, y, r, col) { c.fillStyle = col; c.beginPath(); c.arc(x, y, r, 0, TAU); c.fill(); }
   function rrect(c, x, y, w, h, r, col) { c.fillStyle = col; c.beginPath(); c.roundRect(x, y, w, h, r); c.fill(); }
 
@@ -72,32 +83,38 @@ const Hud = (function () {
     const S = R.S, p = R.p, sv = Save.data;
     // Orbs
     orb(c, 104, 618, 70, p.hp / S.maxHp, ['#ff7a7a', '#d61f2a', '#5a0a10'], now, `${Math.ceil(p.hp)} / ${Math.round(S.maxHp)}`);
-    const hasMana = S.maxMana > 0;
-    orb(c, W - 104, 618, 70, hasMana ? p.mana / S.maxMana : 0, ['#9fd0ff', '#2f7fe8', '#0f2f6a'], now, hasMana ? `${Math.floor(p.mana)} / ${Math.round(S.maxMana)}` : '', !hasMana);
-    if (!hasMana) {
-      c.fillStyle = 'rgba(10,8,12,0.55)'; c.beginPath(); c.arc(W - 104, 618, 69, 0, TAU); c.fill();
-      if (sv.level < LOS.BAL.magicUnlockLevel) { text(c, 'Magie', W - 104, 604, 15, '#8d96ad', 'center', 'bold'); text(c, `ab Level ${LOS.BAL.magicUnlockLevel}`, W - 104, 626, 14, '#8d96ad', 'center', 'bold'); }
-      else { text(c, 'Keine', W - 104, 604, 14, '#8d96ad', 'center', 'bold'); text(c, 'Zauberpunkte', W - 104, 624, 14, '#8d96ad', 'center', 'bold'); }
-    }
-    // Kampf-Leiste: Hieb, Schild, Sprint
-    const ax = 204, ay = 640;
-    const swingCd = Math.max(0, p.atkCd) / S.interval;
-    slot(c, ax, ay, 'sword', '#e8ecf4', kl('attack'), { unlocked: true, cdf: swingCd, active: p.swingT >= 0 });
-    slot(c, ax + 68, ay, 'shield', '#aab4c8', kl('block'), { unlocked: !!S.block, lockLevel: LOS.BAL.shieldUnlockLevel, active: p.blocking });
-    const spr = S.sprint;
-    slot(c, ax + 136, ay, 'sprint', '#9fe0ff', kl('sprint'), { unlocked: !!spr, lockLevel: LOS.BAL.sprintUnlockLevel, active: p.sprinting,
-      cdf: spr ? (p.sprinting ? 0 : Math.min(1, p.sprintCd / spr.cd)) : 0, cdText: spr && !p.sprinting && p.sprintCd > 0 ? String(Math.ceil(p.sprintCd)) : '' });
-    if (spr && p.sprinting) { rrect(c, ax + 138, ay + 52, 58 * Math.max(0, p.sprintT / spr.dur), 5, 2, '#9fe0ff'); }
-    // Zauberleiste
-    const bx = W / 2 - 5 * 33 - 1, by = 640;
-    for (let i = 0; i < 5; i++) {
-      const sp = LOS.SPELLS[i], x = bx + i * 68, un = S.mag >= sp.unlock;
-      slot(c, x, by, sp.id, sp.color, kl('spell' + (i + 1)), { unlocked: un, lockLevel: sp.unlock, active: R.sel === i && un, cdf: un && R.cd[i] > 0 ? R.cd[i] / sp.cd : 0 });
-      if (un) {
-        if (p.mana < sp.cost) { c.fillStyle = 'rgba(20,40,90,0.55)'; c.beginPath(); c.roundRect(x + 1, by + 1, 60, 60, 7); c.fill(); }
-        text(c, String(sp.cost), x + 51, by + 52, 12, '#9fd0ff', 'center', 'bold');
+    // Mana-Kugel erst, wenn die Magie freigeschaltet ist
+    if (sv.level >= LOS.BAL.magicUnlockLevel) {
+      const hasMana = S.maxMana > 0;
+      orb(c, W - 104, 618, 70, hasMana ? p.mana / S.maxMana : 0, ['#9fd0ff', '#2f7fe8', '#0f2f6a'], now, hasMana ? `${Math.floor(p.mana)} / ${Math.round(S.maxMana)}` : '', !hasMana);
+      if (!hasMana) {
+        c.fillStyle = 'rgba(10,8,12,0.55)'; c.beginPath(); c.arc(W - 104, 618, 69, 0, TAU); c.fill();
+        text(c, 'Keine', W - 104, 604, 14, '#8d96ad', 'center', 'bold'); text(c, 'Zauberpunkte', W - 104, 624, 14, '#8d96ad', 'center', 'bold');
       }
     }
+    // Kampf-Leiste: Hieb, dazu Schild und Sprint, sobald freigeschaltet
+    const ax = 204, ay = 640;
+    const swingCd = Math.max(0, p.atkCd) / S.interval;
+    let ix = ax;
+    slot(c, ix, ay, 'sword', '#e8ecf4', kl('attack'), { unlocked: true, cdf: swingCd, active: p.swingT >= 0 });
+    if (S.block) { ix += 68; slot(c, ix, ay, 'shield', '#aab4c8', kl('block'), { unlocked: true, active: p.blocking }); }
+    const spr = S.sprint;
+    if (spr) {
+      ix += 68;
+      slot(c, ix, ay, 'sprint', '#9fe0ff', kl('sprint'), { unlocked: true, active: p.sprinting,
+        cdf: p.sprinting ? 0 : Math.min(1, p.sprintCd / spr.cd), cdText: !p.sprinting && p.sprintCd > 0 ? String(Math.ceil(p.sprintCd)) : '' });
+      if (p.sprinting) rrect(c, ix + 2, ay + 52, 58 * Math.max(0, p.sprintT / spr.dur), 5, 2, '#9fe0ff');
+    }
+    // Zauberleiste: nur freigeschaltete Zauber, mittig
+    const open = [];
+    for (let i = 0; i < 5; i++) if (S.mag >= LOS.SPELLS[i].unlock) open.push(i);
+    const by = 640, bx = W / 2 - (open.length * 68 - 6) / 2;
+    open.forEach((i, n) => {
+      const sp = LOS.SPELLS[i], x = bx + n * 68;
+      slot(c, x, by, sp.id, sp.color, kl('spell' + (i + 1)), { unlocked: true, active: R.sel === i, cdf: R.cd[i] > 0 ? R.cd[i] / sp.cd : 0 });
+      if (p.mana < sp.cost) { c.fillStyle = 'rgba(20,40,90,0.55)'; c.beginPath(); c.roundRect(x + 1, by + 1, 60, 60, 7); c.fill(); }
+      text(c, String(sp.cost), x + 51, by + 52, 12, '#9fd0ff', 'center', 'bold');
+    });
     // XP-Leiste
     const need = sv.level >= LOS.BAL.maxLevel ? 1 : LOS.xpNeed(sv.level), frac = sv.level >= LOS.BAL.maxLevel ? 1 : sv.xp / need;
     const xw = 520, xx = W / 2 - xw / 2, xy = 710;
@@ -128,11 +145,16 @@ const Hud = (function () {
     if (R.banner) {
       const b = R.banner, k = b.t / b.life, a = k < 0.12 ? k / 0.12 : k > 0.8 ? (1 - k) / 0.2 : 1;
       c.globalAlpha = Math.max(0, a);
-      const yb = 168;
-      const g = c.createLinearGradient(W / 2 - 420, 0, W / 2 + 420, 0); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(0.5, 'rgba(0,0,0,0.6)'); g.addColorStop(1, 'rgba(0,0,0,0)');
-      c.fillStyle = g; c.fillRect(W / 2 - 420, yb - 38, 840, 90);
-      text(c, b.title, W / 2, yb, 38, b.color, 'center', 'bold');
-      if (b.sub) text(c, b.sub, W / 2, yb + 36, 17, '#e6dcc0', 'center', 'normal');
+      const yb = 168, maxW = 1000;
+      // Titel passt sich der Breite an, der Untertitel wird umgebrochen (nie breiter als der Bildschirm)
+      c.font = `bold 38px ${FONT}`;
+      const tsize = Math.min(38, Math.floor(38 * maxW / Math.max(1, c.measureText(b.title).width)));
+      const lines = b.sub ? wrap(c, b.sub, 17, maxW, 'normal') : [];
+      const hh = 90 + Math.max(0, lines.length - 1) * 22;
+      const g = c.createLinearGradient(W / 2 - 520, 0, W / 2 + 520, 0); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(0.5, 'rgba(0,0,0,0.6)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+      c.fillStyle = g; c.fillRect(W / 2 - 520, yb - 38, 1040, hh);
+      text(c, b.title, W / 2, yb, tsize, b.color, 'center', 'bold');
+      lines.forEach((ln, i) => text(c, ln, W / 2, yb + 36 + i * 22, 17, '#e6dcc0', 'center', 'normal'));
       c.globalAlpha = 1;
     }
     if (R.over === 'dead') {
