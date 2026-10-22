@@ -207,7 +207,7 @@ const Game = (function () {
     return Math.abs(angDiff(Math.atan2(fy - p.y, fx - p.x), p.face)) < 1.75;
   }
 
-  /** Reflexion (perfekte Parade): Nahkämpfer erleiden den Schaden selbst, Geschosse fliegen auf den Schützen zurück */
+  /** Reflexion (Block oder perfekte Parade): Nahkämpfer erleiden den Schaden selbst, Geschosse fliegen auf den Schützen zurück */
   function reflectBack(src, raw, proj) {
     const p = R.p;
     addText(p.x, p.y, 84, 'Reflexion!', '#ffd24a', 18, 1.1);
@@ -245,6 +245,8 @@ const Game = (function () {
       addText(p.x, p.y, 56, 'Geblockt', '#bcd3ff', 15, 0.7);
       burst(sx, sy, '#cfe2ff', 9, 220, 0.3, 2.2, 0.4, 24, true);
       Sound.sfx('block', 0.06); shake(2);
+      // Reflexion gilt auch beim normalen Block: ein zurückgeworfenes Geschoss richtet den Helden nicht mehr an
+      if (S.block.reflect > 0 && Math.random() < S.block.reflect) { reflectBack(src, raw, opts.proj); if (opts.proj) return; }
     }
     const dmg = Math.max(1, raw * (1 - S.dr) * mult);
     p.hp -= dmg; p.hurtT = 0.25; p.lastHurt = R.time;
